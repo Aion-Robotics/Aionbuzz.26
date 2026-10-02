@@ -1,12 +1,9 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
-import android.util.Range;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-0
 
 @TeleOp (name = "Teste de Arcade Drive")
 public class TeleOp2 extends OpMode {
@@ -37,7 +34,7 @@ public class TeleOp2 extends OpMode {
 
         telemetry.addData("Esquerda", "%.2f", esquerda);
         telemetry.addData("Direita", "%.2f", direita);
-        telemetry.addData("Enconder", motorEsquerdo.getCurrentPosition());
+        telemetry.addData("Encoder", motorEsquerdo.getCurrentPosition());
     }
 
     @Override
