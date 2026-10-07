@@ -20,7 +20,6 @@ public class Teleop extends OpMode {
         dir.setDirection(DcMotorSimple.Direction.REVERSE);
         esq.setDirection(DcMotorSimple.Direction.FORWARD);
 
-
     }
 
     @Override

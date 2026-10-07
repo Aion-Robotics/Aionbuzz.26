@@ -30,10 +30,10 @@ public class TelemetryTest extends OpMode {
 
         if (analogicox != 0.0) {
             telemetry.addData("Program", analogicox);
-            if (analogicox > 0.0)
-                telemetry.addData("Andando", "Frente");
+            if (analogicox > 0.0) // esse if está dentro do outro if, isso não daria problema?
+                telemetry.addData("Andando", "Direita");
             else if (analogicox < 0.0) {
-                telemetry.addData("Andando", "Trás");
+                telemetry.addData("Andando", "Esquerda");
 
             }
         }
