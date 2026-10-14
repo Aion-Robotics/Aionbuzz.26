@@ -24,5 +24,7 @@ public class ServoMecanismTest extends OpMode {
 
     }
     public void setServoRot(double power) {
+
         servoRot.setPower(power);
-}}
+    }
+}
