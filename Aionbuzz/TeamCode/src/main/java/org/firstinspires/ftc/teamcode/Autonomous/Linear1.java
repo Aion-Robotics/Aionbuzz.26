@@ -16,11 +16,20 @@ public class Linear1 extends LinearOpMode {
 
         waitForStart();
 
-        esq.setPower(0.75);
-        dir.setPower(0.75);
-        sleep(1500);
-        esq.setPower(0);
-        dir.setPower(0);
+        esq.setPower(0.50);
+        dir.setPower(0.50);
+        sleep(2250);
+        stop();
+        sleep(200);
+        esq.setPower(-0.60);
+        dir.setPower(0.60);
+        sleep(550);
+        stop();
+        sleep(200);
+        esq.setPower(0.50);
+        dir.setPower(0.50);
+        sleep(1000);
+        stop();
 
         while (opModeIsActive()){
             telemetry.addData("Status", "Finalizado");
