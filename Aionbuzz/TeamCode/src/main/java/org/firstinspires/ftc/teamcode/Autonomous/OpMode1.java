@@ -25,6 +25,8 @@ public class OpMode1 extends OpMode {
         parar();
 
         telemetry.addLine("Inicializado");
+        telemetry.update();
+
     }
 
     @Override
@@ -40,7 +42,7 @@ public class OpMode1 extends OpMode {
                 esq.setPower(0.50);
                 dir.setPower(0.50);
 
-                if (tempo.seconds() >= 1.5){
+                if (tempo.seconds() >= 3.5){
                     parar();
                     etapa = 2;
                     tempo.reset();
@@ -48,7 +50,7 @@ public class OpMode1 extends OpMode {
                 break;
 
             case 2:
-                stop();
+                parar();
 
                 if (tempo.seconds() >= 0.2){
                     etapa = 3;
@@ -60,7 +62,7 @@ public class OpMode1 extends OpMode {
                 esq.setPower(-0.60);
                 dir.setPower(0.60);
 
-                if (tempo.seconds() >= 0.3){
+                if (tempo.seconds() >= 0.35){
                     parar();
                     etapa = 4;
                     tempo.reset();
@@ -76,10 +78,10 @@ public class OpMode1 extends OpMode {
                 break;
 
             case 5:
-                esq.setPower(0.75);
-                dir.setPower(0.75);
+                esq.setPower(0.50);
+                dir.setPower(0.50);
 
-                if (tempo.seconds() >= 1.5){
+                if (tempo.seconds() >= 2.75){
                     parar();
                     etapa = 6;
                     tempo.reset();
@@ -88,12 +90,88 @@ public class OpMode1 extends OpMode {
 
             case 6:
                 parar();
-                telemetry.addLine("Autônomo finalizado");
+                if (tempo.seconds() >= 0.2){
+                    etapa = 7;
+                    tempo.reset();
+                }
                 break;
+
+
+            case 7:
+                esq.setPower(-0.60);
+                dir.setPower(0.60);
+
+                if (tempo.seconds() >= 0.35){
+                    parar();
+                    etapa = 8;
+                    tempo.reset();
+                }
+                break;
+
+            case 8:
+                parar();
+                if (tempo.seconds() >= 0.2){
+                    etapa = 9;
+                    tempo.reset();
+                }
+                break;
+
+            case 9:
+                esq.setPower(0.50);
+                dir.setPower(0.50);
+
+                if (tempo.seconds() >= 3.25){
+                    parar();
+                    etapa = 10;
+                    tempo.reset();
+                }
+                break;
+
+            case 10:
+                esq.setPower(-0.60);
+                dir.setPower(0.60);
+
+                if (tempo.seconds() >= 0.35){
+                    parar();
+                    etapa = 11;
+                    tempo.reset();
+                }
+                break;
+
+            case 11:
+                parar();
+                if (tempo.seconds() >= 0.2){
+                    etapa = 12;
+                    tempo.reset();
+                }
+                break;
+
+            case 12:
+                esq.setPower(0.50);
+                dir.setPower(0.50);
+
+                if (tempo.seconds() >= 3.25) {
+                    parar();
+                    etapa = 13;
+                    tempo.reset();
+                }
+                break;
+
+            case 13:
+                parar();
+                break;
+
+
+
         }
 
-        telemetry.addData("Tempo", "%.2f", tempo.seconds());
+
+        telemetry.addData("Etapa", etapa);
+        telemetry.addData("Tempo da etapa", "%.2f", tempo.seconds());
+        telemetry.addData("Motor esquerdo", "%.2f", esq.getPower());
+        telemetry.addData("Motor direito", "%.2f", dir.getPower());
         telemetry.update();
+
     }
 
     @Override

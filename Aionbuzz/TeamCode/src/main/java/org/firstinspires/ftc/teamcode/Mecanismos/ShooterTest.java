@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 @TeleOp(name = "Shooter Test")
 public class ShooterTest extends OpMode {
-    private Shooter shooter;
+    private RepositoryShooter shooter;
     DcMotorEx motor;
 
     private static final double TEST_RPM = 5990.4;
@@ -14,7 +14,7 @@ public class ShooterTest extends OpMode {
     @Override
     public void init() {
         motor = hardwareMap.get(DcMotorEx.class, "motorShooter");
-        shooter = new Shooter(hardwareMap);
+        shooter = new RepositoryShooter(hardwareMap);
         shooter.setTargetrpm(TEST_RPM);
     }
 

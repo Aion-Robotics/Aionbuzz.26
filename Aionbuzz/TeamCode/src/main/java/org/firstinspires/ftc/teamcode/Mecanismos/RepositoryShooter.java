@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 @Disabled
-public class Shooter {
+public class RepositoryShooter {
     private final DcMotorEx motor;
 
     public static final double DEFAULT_TARGET_RPM = 5990.4;
@@ -17,7 +17,7 @@ public class Shooter {
 
     private double targetRpm = 0.0;
 
-    public Shooter(HardwareMap hardwareMap){
+    public RepositoryShooter(HardwareMap hardwareMap){
         motor = hardwareMap.get(DcMotorEx.class, "motorShooter");
 
         motor.setDirection(DcMotor.Direction.FORWARD);
