@@ -12,7 +12,7 @@ public class Linear1 extends LinearOpMode {
 
         DcMotor esq = hardwareMap.get(DcMotor.class, "motorEsq");
         DcMotor dir = hardwareMap.get(DcMotor.class, "motorDir");
-        dir.setDirection(DcMotorSimple.Direction.REVERSE);
+        dir.setDirection(DcMotor.Direction.REVERSE);
 
         waitForStart();
 
@@ -23,7 +23,7 @@ public class Linear1 extends LinearOpMode {
         sleep(200);
         esq.setPower(-0.60);
         dir.setPower(0.60);
-        sleep(550);
+        sleep(250);
         stop();
         sleep(200);
         esq.setPower(0.50);

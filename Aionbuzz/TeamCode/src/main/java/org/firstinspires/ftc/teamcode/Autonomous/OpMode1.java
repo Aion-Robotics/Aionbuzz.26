@@ -37,8 +37,8 @@ public class OpMode1 extends OpMode {
     public void loop() {
         switch (etapa){
             case 1:
-                esq.setPower(0.75);
-                dir.setPower(0.75);
+                esq.setPower(0.50);
+                dir.setPower(0.50);
 
                 if (tempo.seconds() >= 1.5){
                     parar();
@@ -60,7 +60,7 @@ public class OpMode1 extends OpMode {
                 esq.setPower(-0.60);
                 dir.setPower(0.60);
 
-                if (tempo.seconds() >= 0.7){
+                if (tempo.seconds() >= 0.3){
                     parar();
                     etapa = 4;
                     tempo.reset();
