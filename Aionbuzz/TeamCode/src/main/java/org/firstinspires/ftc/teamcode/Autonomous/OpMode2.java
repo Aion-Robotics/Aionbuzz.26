@@ -18,11 +18,11 @@ public class OpMode2 extends OpMode {
     private static final double POTENCIA_GIRO = 0.60;
 
     private static final double TEMPO_PRIMEIRO_LADO = 3.50;
-    private static final double TEMPO_SEGUNDO_LADO = 2.75;
-    private static final double TEMPO_TERCEIRO_LAD0 = 3.25;
+    private static final double TEMPO_SEGUNDO_LADO = 2.50;
+    private static final double TEMPO_TERCEIRO_LAD0 = 2.50;
     private static final double TEMPO_QUARTO_LADO = 2.50;
 
-    private static final double TEMPO_GIRO = 0.35;
+    private static final double TEMPO_GIRO = 0.34;
     private static final double TEMPO_PAUSA = 0.20;
 
 

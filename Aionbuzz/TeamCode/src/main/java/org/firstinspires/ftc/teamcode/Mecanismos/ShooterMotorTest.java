@@ -11,7 +11,7 @@ public class ShooterMotorTest extends OpMode {
 
     @Override
     public void init() {
-        shooter = hardwareMap.get(DcMotorEx.class, "motorSdhooter");
+        shooter = hardwareMap.get(DcMotorEx.class, "motorShooter");
         shooter.setDirection(DcMotor.Direction.FORWARD);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }

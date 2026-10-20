@@ -9,36 +9,47 @@ public class ShooterTest extends OpMode {
     private RepositoryShooter shooter;
     DcMotorEx motor;
 
+
+
     private static final double TEST_RPM = 5990.4;
 
     @Override
     public void init() {
         motor = hardwareMap.get(DcMotorEx.class, "motorShooter");
         shooter = new RepositoryShooter(hardwareMap);
-        shooter.setTargetrpm(TEST_RPM);
+        shooter.setTargetRpm(TEST_RPM);
     }
 
     @Override
     public void loop() {
-        if (gamepad1.right_trigger_pressed){
+        boolean gatilhoPressionado = gamepad1.right_trigger > 0.05;
+
+
+        if (gatilhoPressionado){
             shooter.update();
         } else {
             shooter.stop();
         }
 
-        telemetry.addData("Alvo (RPM)", shooter.getTargetRpm());
-        telemetry.addData("Atual (RPM)", shooter.getVelocityRpm());
-        telemetry.addData("Alvo (Ticks/s)", shooter.getTargetTicksPerSecond());
-        telemetry.addData("Atual (Ticks/s)", shooter.getVelocityTicksPerSecond());
-        telemetry.addData("Ticks/rev", shooter.getTicksPerRevolution());
-        telemetry.addData("Pronto", gamepad1.right_trigger_pressed && shooter.isAtSpeed());
+        telemetry.addData("Gatilho", "%.2f", gamepad1.right_trigger);
+        telemetry.addData("Alvo (RPM)", "%.1f", shooter.getTargetRpm());
+        telemetry.addData("Atual (RPM)", "%.1f", shooter.getVelocityRpm());
+        telemetry.addData("Alvo (Ticks/s)", "%.1f",
+                shooter.getTargetTicksPerSecond());
+        telemetry.addData("Atual (Ticks/s)", "%.1f",
+                shooter.getVelocityTicksPerSecond());
+        telemetry.addData("Ticks/rev", "%.1f",
+                shooter.getTicksPerRevolution());
+        telemetry.addData("Pronto",
+                gatilhoPressionado && shooter.isAtSpeed());
+
         telemetry.update();
     }
 
     @Override
     public void stop() {
-        if (shooter!= null){
-            shooter.stop();
+        motor.setVelocity(0.0);
+        motor.setPower(0.0);
         }
     }
-}
+

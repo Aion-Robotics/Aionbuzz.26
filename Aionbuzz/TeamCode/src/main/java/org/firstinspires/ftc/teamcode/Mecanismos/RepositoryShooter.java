@@ -1,12 +1,10 @@
 package org.firstinspires.ftc.teamcode.Mecanismos;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
-@Disabled
 public class RepositoryShooter {
     private final DcMotorEx motor;
 
@@ -27,19 +25,20 @@ public class RepositoryShooter {
         stop();
     }
 
-    public void setTargetrpm(double rpm) {
+    public void setTargetRpm(double rpm) {
         targetRpm = Math.max(0.0, rpm);
     }
 
     public void setTargetRpmFromDriver(double rpm){
-
-        setTargetrpm(Range.clip(rpm, 0.0, 5000.0));
+        setTargetRpm(Range.clip(rpm, 0.0, DEFAULT_TARGET_RPM));
     }
 
-    public void update(){
+
+    public void update() {
         double targetTicksPerSecond = rpmToTicksPerSecond(targetRpm);
-        motor.setPower(0.5);
+        motor.setVelocity(targetTicksPerSecond);
     }
+
 
     public void stop(){
         targetRpm = 0.0;
@@ -84,6 +83,14 @@ public class RepositoryShooter {
 
     private double rpmToTicksPerSecond(double rpm){
         return rpm/60.0*getTicksPerRevolution();
+    }
+
+    public double getMotorMaxTicksPerSecond() {
+        return motor.getMotorType().getMaxRPM() *
+                getTicksPerRevolution() / 60.0;
+    }
+    public double getMotorMaxRpm() {
+        return motor.getMotorType().getMaxRPM();
     }
 
 }
