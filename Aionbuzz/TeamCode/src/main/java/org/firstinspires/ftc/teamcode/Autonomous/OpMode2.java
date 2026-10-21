@@ -18,11 +18,11 @@ public class OpMode2 extends OpMode {
     private static final double POTENCIA_GIRO = 0.60;
 
     private static final double TEMPO_PRIMEIRO_LADO = 3.50;
-    private static final double TEMPO_SEGUNDO_LADO = 2.50;
-    private static final double TEMPO_TERCEIRO_LAD0 = 2.50;
+    private static final double TEMPO_SEGUNDO_LADO = 2.60;
+    private static final double TEMPO_TERCEIRO_LAD0 = 2.55;
     private static final double TEMPO_QUARTO_LADO = 2.50;
 
-    private static final double TEMPO_GIRO = 0.34;
+    private static final double TEMPO_GIRO = 0.39;
     private static final double TEMPO_PAUSA = 0.20;
 
 
@@ -31,7 +31,7 @@ public class OpMode2 extends OpMode {
         motorEsquerdo = hardwareMap.get(DcMotor.class, "motorEsq");
         motorDireito = hardwareMap.get(DcMotor.class, "motorDir");
 
-        motorDireito.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorDireito.setDirection(DcMotor.Direction.REVERSE);
 
         motorEsquerdo.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorDireito.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -131,7 +131,7 @@ public class OpMode2 extends OpMode {
             case 10:
                 girarEsquerda();
 
-                if (tempo.seconds() >= TEMPO_GIRO) {
+                if (tempo.seconds() >= 0.46) {
                     parar();
                     mudarEtapa(11);
                 }
@@ -150,12 +150,7 @@ public class OpMode2 extends OpMode {
 
                 if (tempo.seconds() >= TEMPO_QUARTO_LADO) {
                     parar();
-                    Etapa = 13;
                 }
-                break;
-
-            case 13:
-                parar();
                 break;
 
             default:
