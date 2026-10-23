@@ -20,6 +20,8 @@ public class RepositoryRobot extends OpMode {
         motor[1] = hardwareMap.get(DcMotor.class, "motorEsq");
         motor[2] = hardwareMap.get(DcMotor.class, "motorIntake");
 
+        motor[1].setDirection(DcMotorSimple.Direction.REVERSE);
+
         // Program Servos
         speedServo[0] = hardwareMap.get(CRServo.class, "servoDir");
         speedServo[1] = hardwareMap.get(CRServo.class, "servoEsq");
@@ -41,8 +43,8 @@ public class RepositoryRobot extends OpMode {
         double stickY =  -gamepad1.left_stick_y;
         double stickX =  gamepad1.left_stick_x;
 
-        double leftMove = Range.clip(stickX + stickY,-0.5, 0.5);
-        double rightMove = Range.clip(stickX - stickY, -0.5, 0.5);
+        double leftMove = Range.clip(stickY - stickX,-0.5, 0.5);
+        double rightMove = Range.clip(stickY + stickX, -0.5, 0.5);
 
         motor[0].setPower(rightMove);
         motor[1].setPower(leftMove);

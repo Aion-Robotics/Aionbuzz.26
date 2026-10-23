@@ -193,4 +193,3 @@ public class OpMode2 extends OpMode {
         telemetry.update();
     }
 }
-
