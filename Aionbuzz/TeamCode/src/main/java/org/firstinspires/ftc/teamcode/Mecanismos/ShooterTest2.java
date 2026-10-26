@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.Mecanismos;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-@TeleOp(name = "Shooter Test 2")
+@Disabled
 public class ShooterTest2 extends OpMode {
 
     private RepositoryShooter shooter;
