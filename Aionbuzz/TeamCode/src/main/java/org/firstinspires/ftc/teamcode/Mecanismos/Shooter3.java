@@ -21,5 +21,45 @@ public class Shooter3 extends OpMode {
 
     }
     @Override
-    public void loop(){}
+    public void loop(){
+        double trigger = gamepad1.right_trigger;
+
+        if (trigger < 0.05) {
+            trigger = 0.0;
+        }
+
+        double ticksPerRevolution = motorShooter.getMotorType().getTicksPerRev();
+
+        double targetRpm = trigger * MAX_RPM;
+        double targetTicksPerSecond = targetRpm / 60.0 * ticksPerRevolution;
+
+        if (trigger > 0.0) {
+            motorShooter.setVelocity(targetTicksPerSecond);
+        } else { motorShooter.setVelocity(0.0);}
+
+        double currentTicksPerSecond = motorShooter.getVelocity();
+
+        double currentRpm = 0.0;
+
+        if (ticksPerRevolution > 0.0) {
+            currentRpm = currentTicksPerSecond * 60.0 / ticksPerRevolution;
+        }
+
+        telemetry.addData("Trigger", "%.2f", trigger);
+        telemetry.addData("RPM Alvo", "%.1f", targetRpm);
+        telemetry.addData("RPM Atual", "%.1f", currentRpm);
+        telemetry.addData("Ticks/s alvo", "%.1f", currentTicksPerSecond);
+        telemetry.addData("Ticks/rev", "%.1f", ticksPerRevolution);
+        telemetry.addData("Posição Encoder", motorShooter.getCurrentPosition());
+        telemetry.addData("Potência Aplicada", "%.2f", motorShooter.getPower());
+        telemetry.update();
+    }
+
+    @Override
+    public void stop() {
+        if (motorShooter != null) {
+            motorShooter.setVelocity(0.0);
+            motorShooter.setPower(0.0);
+        }
+    }
 }

@@ -10,7 +10,6 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.MoveRobot.RepositoryRobot;
 
-
 @TeleOp
 public class TankDrive extends RepositoryRobot {
     @Override

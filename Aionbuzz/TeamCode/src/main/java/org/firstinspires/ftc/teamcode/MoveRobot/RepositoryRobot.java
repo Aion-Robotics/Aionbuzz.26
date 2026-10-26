@@ -43,17 +43,16 @@ public class RepositoryRobot extends OpMode {
         double stickY =  -gamepad1.left_stick_y;
         double stickX =  gamepad1.left_stick_x;
 
-        double leftMove = Range.clip(stickY - stickX,-0.5, 0.5);
-        double rightMove = Range.clip(stickY + stickX, -0.5, 0.5);
+        double leftMove = Range.clip(stickY - stickX,-0.4, 0.4);
+        double rightMove = Range.clip(stickY + stickX, -0.4, 0.4);
 
         motor[0].setPower(rightMove);
         motor[1].setPower(leftMove);
 
         if (gamepad1.right_bumper) {
-            double turbo = 2.0;
+            double turbo = 2.5;
             for(int i = 0; i < 2; i++)
                 motor[i].setPower(motor[i].getPower()*turbo);
-
         }
         if((leftMove == 0.0) && (rightMove == 0.0))
             stateMotor = DcMotor.ZeroPowerBehavior.BRAKE;
@@ -76,9 +75,8 @@ public class RepositoryRobot extends OpMode {
             for (int i = 0; i < 2; i++)
                 speedServo[i].setPower(1.0);
         } else {
-            for (CRServo servo: speedServo) {
+            for (CRServo servo: speedServo)
                 servo.setPower(0.0);
-            }
         }
     }
 }
