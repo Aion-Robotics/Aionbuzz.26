@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp
+@Autonomous
 public class OpModeIMU extends OpMode {
 
     /*
@@ -33,16 +33,16 @@ public class OpModeIMU extends OpMode {
 
     private static final double POTENCIA_FRENTE = 0.50;
     private static final double POTENCIA_MINIMA_GIRO = 0.18;
-    private static final double POTENCIA_MAXIMA_GIRO = 0.60;
+    private static final double POTENCIA_MAXIMA_GIRO = 0.55;
 
     private static final double ANGULO_GIRO = 90.0;
-    private static final double TOLERANCIA_GRAUS = 2.0;
+    private static final double TOLERANCIA_GRAUS = 3.50;
 
     /*
     TEMPO DOS DESLOCAMENTOS
      */
 
-    private static final double TEMPO_PRIMEIRO_LADO = 3.50;
+    private static final double TEMPO_PRIMEIRO_LADO = 3.25;
     private static final double TEMPO_SEGUNDO_LADO = 2.60;
     private static final double TEMPO_TERCEIRO_LADO = 2.55;
     private static final double TEMPO_QUARTO_LADO = 2.50;
@@ -54,8 +54,8 @@ public class OpModeIMU extends OpMode {
     VARIÁVEIS DA IMU
      */
 
-    private double alvoHeading = 0.0;
-    // angulo que o robo deve atingit durante o próximo giro
+    private double alvoHeading = 90.0;
+    // angulo que o robo deve atingir durante o próximo giro
 
 
     @Override
@@ -82,7 +82,7 @@ public class OpModeIMU extends OpMode {
         imu.initialize(new IMU.Parameters(orientationHub));
         // inicializa a IMU utilizando a orientação informada
 
-        motorDireito.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorEsquerdo.setDirection(DcMotorSimple.Direction.REVERSE);
         // inverte a orientação do motor
         motorDireito.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorEsquerdo.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -282,7 +282,7 @@ public class OpModeIMU extends OpMode {
          * o giro foi concluído.
          */
 
-        double potencia = Math.abs(erro) * 0.01;
+        double potencia = Math.abs(erro) * 0.005;
         /*
          * Controle proporcional simples:
          *
