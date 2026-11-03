@@ -23,6 +23,7 @@ public class ShooterTest2 extends OpMode {
     public void loop() {
         double trigger = gamepad1.right_trigger;
 
+
         if (trigger < TRIGGER_DEADZONE) {
             trigger = 0.0;
         }

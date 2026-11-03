@@ -10,53 +10,89 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@Autonomous
+@Autonomous(name = "Autonomo IMU", group = "Autonomous")
 public class OpModeIMU extends OpMode {
 
-    /*
-    DECLARAÇÃO DOS COMPONENTES
-    */
+    // =========================
+    // Hardware
+    // =========================
 
     private DcMotor motorEsquerdo;
     private DcMotor motorDireito;
     private IMU imu;
 
-    private final ElapsedTime tempo = new ElapsedTime();
-    // cronometro utilizado para contagem de tempo
-    private int etapa = 0;
-    //identifica a etapa a ser executada
+    // =========================
+    // Maquina de estados
+    // =========================
 
+    private enum Estado {
+        LADO_1,
+        PAUSA_ANTES_GIRO_1,
+        GIRO_1,
+        PAUSA_DEPOIS_GIRO_1,
 
-    /*
-    CONFIGURAÇÕES DE MOVIMENTO
-     */
+        LADO_2,
+        PAUSA_ANTES_GIRO_2,
+        GIRO_2,
+        PAUSA_DEPOIS_GIRO_2,
+
+        LADO_3,
+        PAUSA_ANTES_GIRO_3,
+        GIRO_3,
+        PAUSA_DEPOIS_GIRO_3,
+
+        LADO_4,
+        FINALIZADO,
+        FALHA
+    }
+
+    private Estado estadoAtual = Estado.FINALIZADO;
+    private final ElapsedTime tempoEstado = new ElapsedTime();
+    private final ElapsedTime tempoAutonomo = new ElapsedTime();
+
+    // =========================
+    // Configuraçõ
+    //
+    // es de movimento
+    // =========================
 
     private static final double POTENCIA_FRENTE = 0.50;
-    private static final double POTENCIA_MINIMA_GIRO = 0.18;
-    private static final double POTENCIA_MAXIMA_GIRO = 0.55;
 
     private static final double ANGULO_GIRO = 90.0;
-    private static final double TOLERANCIA_GRAUS = 3.50;
+    private static final double TOLERANCIA_GRAUS = 3.5;
 
-    /*
-    TEMPO DOS DESLOCAMENTOS
-     */
+    // Controle proporcional do giro
+    private static final double KP_GIRO = 0.005;
+    private static final double POTENCIA_MINIMA_GIRO = 0.10;
+    private static final double POTENCIA_MAXIMA_GIRO = 0.55;
 
-    private static final double TEMPO_PRIMEIRO_LADO = 3.25;
-    private static final double TEMPO_SEGUNDO_LADO = 2.60;
-    private static final double TEMPO_TERCEIRO_LADO = 2.55;
-    private static final double TEMPO_QUARTO_LADO = 2.50;
+    // A potencia minima so e aplicada longe do alvo.
+    private static final double ERRO_MINIMO_PARA_POTENCIA_MINIMA = 10.0;
 
+    // Se o giro durar mais que isso, o robo para por seguranca.
+    private static final double TEMPO_MAXIMO_GIRO = 3.0;
+
+    // =========================
+    // Tempos dos deslocamentos
+    // =========================
+
+    private static final double TEMPO_LADO_1 = 3.25;
+    private static final double TEMPO_LADO_2 = 2.60;
+    private static final double TEMPO_LADO_3 = 2.55;
+    private static final double TEMPO_LADO_4 = 2.50;
     private static final double TEMPO_PAUSA = 0.20;
 
+    // =========================
+    // Variaveis da IMU
+    // =========================
 
-    /*
-    VARIÁVEIS DA IMU
+    private double alvoHeading = 0.0;
+
+    /**
+     * Usar +1 se o heading aumentar ao girar para a esquerda.
+     * Usar -1 se o heading diminuir ao girar para a esquerda.
      */
-
-    private double alvoHeading = 90.0;
-    // angulo que o robo deve atingir durante o próximo giro
-
+    private static final double SINAL_GIRO_ESQUERDA = 1.0;
 
     @Override
     public void init() {
@@ -64,293 +100,261 @@ public class OpModeIMU extends OpMode {
         motorDireito = hardwareMap.get(DcMotor.class, "motorDir");
         imu = hardwareMap.get(IMU.class, "imu");
 
+        // Esta orientacao precisa corresponder a montagem real do Hub.
         RevHubOrientationOnRobot orientationHub =
                 new RevHubOrientationOnRobot(
                         RevHubOrientationOnRobot.LogoFacingDirection.UP,
                         RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD);
-        /*
-         * Configuração da orientação física do Expansion Hub.
-         *
-         * Esta configuração considera:
-         *
-         * - Logo do Hub voltado para cima;
-         * - Porta USB voltada para a trás do robô.
-         *
-         * A orientação deve corresponder à montagem real do Hub.
-         */
 
         imu.initialize(new IMU.Parameters(orientationHub));
-        // inicializa a IMU utilizando a orientação informada
 
+        // Com um motor invertido, os dois motores devem mover o robo para frente
+        // quando recebem a mesma potencia positiva.
         motorEsquerdo.setDirection(DcMotorSimple.Direction.REVERSE);
-        // inverte a orientação do motor
-        motorDireito.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorDireito.setDirection(DcMotorSimple.Direction.FORWARD);
+
         motorEsquerdo.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        // faz os motores frearem em potência zero
+        motorDireito.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        motorEsquerdo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorDireito.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         parar();
 
         telemetry.addLine("Inicializado");
         telemetry.addLine("IMU configurada");
+        telemetry.addLine("Verifique a orientacao fisica do Hub");
         telemetry.update();
     }
 
-    // INICIO DO AUTÔNOMO
     @Override
-    public void start(){
+    public void start() {
         imu.resetYaw();
-        /*
-         * Define a orientação atual do robô como 0°.
-         *
-         * A partir deste momento:
-         *
-         * - 0° representa a direção inicial;
-         * - 90° representa um giro de 90°;
-         * - 180° representa meia-volta;
-         * - -90° representa um giro no sentido contrário.
-         */
-
-        mudarEtapa(1);
+        tempoAutonomo.reset();
+        mudarEstado(Estado.LADO_1);
     }
 
     @Override
     public void loop() {
-        switch (etapa){
+        switch (estadoAtual) {
+            case LADO_1:
+                executarDeslocamento(TEMPO_LADO_1, Estado.PAUSA_ANTES_GIRO_1);
+                break;
 
-        case 1:
-            andarFrente();
+            case PAUSA_ANTES_GIRO_1:
+                executarPausa(Estado.GIRO_1);
+                break;
 
-            if (tempo.seconds() >= TEMPO_PRIMEIRO_LADO) {
+            case GIRO_1:
+                executarGiro(Estado.PAUSA_DEPOIS_GIRO_1);
+                break;
+
+            case PAUSA_DEPOIS_GIRO_1:
+                executarPausa(Estado.LADO_2);
+                break;
+
+            case LADO_2:
+                executarDeslocamento(TEMPO_LADO_2, Estado.PAUSA_ANTES_GIRO_2);
+                break;
+
+            case PAUSA_ANTES_GIRO_2:
+                executarPausa(Estado.GIRO_2);
+                break;
+
+            case GIRO_2:
+                executarGiro(Estado.PAUSA_DEPOIS_GIRO_2);
+                break;
+
+            case PAUSA_DEPOIS_GIRO_2:
+                executarPausa(Estado.LADO_3);
+                break;
+
+            case LADO_3:
+                executarDeslocamento(TEMPO_LADO_3, Estado.PAUSA_ANTES_GIRO_3);
+                break;
+
+            case PAUSA_ANTES_GIRO_3:
+                executarPausa(Estado.GIRO_3);
+                break;
+
+            case GIRO_3:
+                executarGiro(Estado.PAUSA_DEPOIS_GIRO_3);
+                break;
+
+            case PAUSA_DEPOIS_GIRO_3:
+                executarPausa(Estado.LADO_4);
+                break;
+
+            case LADO_4:
+                executarDeslocamento(TEMPO_LADO_4, Estado.FINALIZADO);
+                break;
+
+            case FINALIZADO:
                 parar();
-                mudarEtapa(2);
-            }
-
-            break;
-
-        case 2:
-            parar();
-
-            if (tempo.seconds() >= TEMPO_PAUSA){
-
-            iniciarGiroEsquerda(3);
-
-            }
-            break;
-
-            case 3:
-
-                if (girarAteAlvo()) {
-                    parar();
-                    mudarEtapa(4);
-                }
                 break;
 
-            case 4:
-                parar();
-
-                if (tempo.seconds() >= TEMPO_PAUSA) {
-                    mudarEtapa(5);
-                }
-                break;
-
-            case 5:
-                andarFrente();
-
-                if (tempo.seconds() >= TEMPO_SEGUNDO_LADO) {
-                    parar();
-                    mudarEtapa(6);
-                }
-                break;
-
-            case 6:
-                parar();
-
-                if (tempo.seconds() >= TEMPO_PAUSA) {
-                    iniciarGiroEsquerda(7);
-                }
-                break;
-
-            case 7:
-                if (girarAteAlvo()) {
-                    parar();
-                    mudarEtapa(8);
-                }
-                break;
-
-            case 8:
-                parar();
-
-                if (tempo.seconds() >= TEMPO_PAUSA) {
-                    mudarEtapa(9);
-                }
-                break;
-
-            case 9:
-                andarFrente();
-
-                if (tempo.seconds() >= TEMPO_TERCEIRO_LADO){
-                    parar();
-                    iniciarGiroEsquerda(10);
-                }
-                break;
-
-            case 10:
-                if (girarAteAlvo()) {
-                    parar();
-                    mudarEtapa(11);
-                }
-                break;
-
-            case 11:
-                parar();
-
-                if (tempo.seconds() >= TEMPO_PAUSA) {
-                    mudarEtapa(12);
-                }
-                break;
-
-            case 12:
-                andarFrente();
-
-                if (tempo.seconds() >= TEMPO_QUARTO_LADO) {
-                    parar();
-                    mudarEtapa(13);
-                }
-                break;
-
-            case 13:
+            case FALHA:
                 parar();
                 break;
 
             default:
                 parar();
+                mudarEstado(Estado.FALHA);
                 break;
         }
-        atualizarTelemetry();
 
+        atualizarTelemetry();
     }
 
     @Override
     public void stop() {
-        parar(); // desliga os dois motores no fim da etapa
+        parar();
     }
 
+    // =========================
+    // Execução dos estados
+    // =========================
 
-    // MOVIMENTOS BÁSICOS
+    private void executarDeslocamento(double duracao, Estado proximoEstado) {
+        andarFrente();
+
+        if (tempoEstado.seconds() >= duracao) {
+            parar();
+            mudarEstado(proximoEstado);
+        }
+    }
+
+    private void executarPausa(Estado proximoEstado) {
+        parar();
+
+        if (tempoEstado.seconds() >= TEMPO_PAUSA) {
+            if (proximoEstado == Estado.GIRO_1
+                    || proximoEstado == Estado.GIRO_2
+                    || proximoEstado == Estado.GIRO_3) {
+                iniciarGiroEsquerda(proximoEstado);
+            } else {
+                mudarEstado(proximoEstado);
+            }
+        }
+    }
+
+    private void executarGiro(Estado proximoEstado) {
+        if (tempoEstado.seconds() >= TEMPO_MAXIMO_GIRO) {
+            parar();
+            telemetry.addLine("FALHA: tempo maximo do giro excedido");
+            mudarEstado(Estado.FALHA);
+            return;
+        }
+
+        if (girarAteAlvo()) {
+            parar();
+            mudarEstado(proximoEstado);
+        }
+    }
+
+    // =========================
+    // Movimentos basicos
+    // =========================
+
     private void andarFrente() {
         motorEsquerdo.setPower(POTENCIA_FRENTE);
         motorDireito.setPower(POTENCIA_FRENTE);
     }
 
-    private void parar(){
+    private void parar() {
         motorEsquerdo.setPower(0.0);
         motorDireito.setPower(0.0);
-        // zera a potência dos dois motores
     }
 
-    // CONTROLE DAS ETAPAS
-    private void mudarEtapa(int novaEtapa) {
-        etapa = novaEtapa;
-        // atualiza etapa atual
-        tempo.reset();
-        // zera o cronometro para iniciar nova etapa apartir do zero
+    // =========================
+    // Controle da maquina de estados
+    // =========================
+
+    private void mudarEstado(Estado novoEstado) {
+        estadoAtual = novoEstado;
+        tempoEstado.reset();
     }
 
-    // CONTROLE DE GIRO COM IMU
-    private void iniciarGiroEsquerda(int etapaDoGiro) {
-        alvoHeading = normalizarAngulo(obterHeading() + ANGULO_GIRO);
-        /* Define o alvo como 90° à esquerda da orientação atual.
-         *
-         * Nesta configuração, considera-se que o valor do yaw
-         * aumenta quando o robô gira para a esquerda.
-         */
+    // =========================
+    // Controle do giro com IMU
+    // =========================
 
-        mudarEtapa(etapaDoGiro);
+    private void iniciarGiroEsquerda(Estado estadoDoGiro) {
+        alvoHeading = normalizarAngulo(
+                obterHeading() + (SINAL_GIRO_ESQUERDA * ANGULO_GIRO));
+
+        mudarEstado(estadoDoGiro);
     }
 
     private boolean girarAteAlvo() {
         double erro = obterErroHeading();
-        // Calcula diferença entre o alvo e a orientação atual
+        double erroAbsoluto = Math.abs(erro);
 
-        if (Math.abs(erro) <= TOLERANCIA_GRAUS) {
+        if (erroAbsoluto <= TOLERANCIA_GRAUS) {
             parar();
             return true;
         }
 
-        /*
-         * Se o erro estiver dentro da tolerância,
-         * o giro foi concluído.
-         */
-
-        double potencia = Math.abs(erro) * 0.005;
-        /*
-         * Controle proporcional simples:
-         *
-         * - Erro grande: utiliza mais potência;
-         * - Erro pequeno: utiliza menos potência.
-         */
-
+        double potencia = erroAbsoluto * KP_GIRO;
         potencia = Math.min(potencia, POTENCIA_MAXIMA_GIRO);
-        // Limita a potência máxima do giro.
-        potencia = Math.max(potencia, POTENCIA_MINIMA_GIRO);
-        // Evita uma potência baixa demais para vencer o atrito.
 
+        // Evita que o robo fique sem forca longe do alvo,
+        // mas permite uma aproximacao suave perto do alvo.
+        if (erroAbsoluto > ERRO_MINIMO_PARA_POTENCIA_MINIMA) {
+            potencia = Math.max(potencia, POTENCIA_MINIMA_GIRO);
+        }
+
+        // O erro positivo representa a direcao necessaria para atingir o alvo.
+        // Estes sinais devem ser confirmados no teste fisico.
         if (erro > 0.0) {
             motorEsquerdo.setPower(-potencia);
             motorDireito.setPower(potencia);
         } else {
-            motorDireito.setPower(-potencia);
             motorEsquerdo.setPower(potencia);
+            motorDireito.setPower(-potencia);
         }
 
         return false;
     }
 
-    // LEITURA DOS ÂNGULOS IMU
+    // =========================
+    // Leitura e normalizacao do heading
+    // =========================
 
     private double obterHeading() {
-
         return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-          //Retorna o yaw atual do robô em graus.
-
     }
 
     private double obterErroHeading() {
         double erro = alvoHeading - obterHeading();
-        //Calcula diferença entre ângulo desejado e ângulo atual
-
         return normalizarAngulo(erro);
-        /*
-         * Normaliza o erro para sempre utilizar o menor
-         * caminho entre -180° e +180°.
-         */
     }
 
     private double normalizarAngulo(double angulo) {
         while (angulo > 180.0) {
             angulo -= 360.0;
         }
+
         while (angulo <= -180.0) {
             angulo += 360.0;
         }
-        return angulo;
 
-        /*
-         * Mantém o ângulo dentro do intervalo:
-         *
-         * -180° < ângulo <= 180°
-         */
+        return angulo;
     }
 
-    // TELEMETRIA
+    // =========================
+    // Telemetria
+    // =========================
 
     private void atualizarTelemetry() {
-        telemetry.addData("Etapa", etapa);
-        telemetry.addData("Tempo da Etapa", "%.2f s", tempo.seconds());
-        telemetry.addData("Heading Atual", "%.2f graus", alvoHeading);
-        telemetry.addData("Erro do Giro", "%.2f graus", obterErroHeading());
-        telemetry.addData("Motor Esquerdo", "%.2f", motorEsquerdo.getPower());
-        telemetry.addData("Motor Direito", "%.2f", motorDireito.getPower());
+        telemetry.addData("Estado", estadoAtual);
+        telemetry.addData("Tempo do estado", "%.2f s", tempoEstado.seconds());
+        telemetry.addData("Tempo total", "%.2f s", tempoAutonomo.seconds());
+        telemetry.addData("Heading atual", "%.2f graus", obterHeading());
+        telemetry.addData("Heading alvo", "%.2f graus", alvoHeading);
+        telemetry.addData("Erro do giro", "%.2f graus", obterErroHeading());
+        telemetry.addData("Motor esquerdo", "%.2f", motorEsquerdo.getPower());
+        telemetry.addData("Motor direito", "%.2f", motorDireito.getPower());
         telemetry.update();
     }
 }
