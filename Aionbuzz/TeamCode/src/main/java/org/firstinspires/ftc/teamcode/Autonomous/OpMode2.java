@@ -32,7 +32,7 @@ public class OpMode2 extends OpMode {
         motorEsquerdo = hardwareMap.get(DcMotor.class, "motorEsq");
         motorDireito = hardwareMap.get(DcMotor.class, "motorDir");
 
-        motorDireito.setDirection(DcMotor.Direction.REVERSE);
+        motorEsquerdo.setDirection(DcMotor.Direction.REVERSE);
         // orientação do motor direito
 
         motorEsquerdo.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -181,9 +181,9 @@ public class OpMode2 extends OpMode {
         }
 
         private void girarEsquerda() {
-            motorEsquerdo.setPower(-POTENCIA_GIRO);
+            motorEsquerdo.setPower(POTENCIA_GIRO);
             // motor esquerdo gira no sentido contrário
-            motorDireito.setPower(POTENCIA_GIRO);
+            motorDireito.setPower(-POTENCIA_GIRO);
         }
         private void parar(){
             motorEsquerdo.setPower(0.0);
