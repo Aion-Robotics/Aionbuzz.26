@@ -22,11 +22,7 @@ public class AprilTagWebcamExample extends OpMode {
 
     @Override
     public void start() {
-        /*
-         * O VisionPortal normalmente já começa a transmitir
-         * automaticamente. Este método só será necessário se
-         * você tiver parado o streaming anteriormente.
-         */
+
         aprilTagWebcam.resumeStreaming();
 
         telemetry.clear();
@@ -36,10 +32,7 @@ public class AprilTagWebcamExample extends OpMode {
 
     @Override
     public void loop() {
-        /*
-         * O FTC chama loop() repetidamente.
-         * Portanto, a lista de detecções é atualizada continuamente.
-         */
+
         aprilTagWebcam.update();
 
         telemetry.addData(
@@ -52,11 +45,7 @@ public class AprilTagWebcamExample extends OpMode {
                 aprilTagWebcam.getDetectedTags().size()
         );
 
-        /*
-         * Mostra todas as tags detectadas.
-         * Isso facilita o teste, pois você não precisa
-         * saber antecipadamente qual é o ID da tag.
-         */
+      
         for (AprilTagDetection detection :
                 aprilTagWebcam.getDetectedTags()) {
 
@@ -74,7 +63,7 @@ public class AprilTagWebcamExample extends OpMode {
         } else {
             telemetry.addLine("Tag 30 nao encontrada");
         }
-        
+
         telemetry.update();
     }
 
