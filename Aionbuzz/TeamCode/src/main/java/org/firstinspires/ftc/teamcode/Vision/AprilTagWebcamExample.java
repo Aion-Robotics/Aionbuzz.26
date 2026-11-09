@@ -74,10 +74,7 @@ public class AprilTagWebcamExample extends OpMode {
         } else {
             telemetry.addLine("Tag 30 nao encontrada");
         }
-
-        /*
-         * Envia todo o conteúdo acumulado para o Driver Hub.
-         */
+        
         telemetry.update();
     }
 
