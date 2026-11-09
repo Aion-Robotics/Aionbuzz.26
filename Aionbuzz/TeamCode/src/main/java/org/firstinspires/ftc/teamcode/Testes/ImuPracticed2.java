@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @Autonomous
-public class ImuPracticed extends LinearOpMode {
+public class ImuPracticed2 extends LinearOpMode {
 
     IMU imu;
     DcMotor motorEsq, motorDir;

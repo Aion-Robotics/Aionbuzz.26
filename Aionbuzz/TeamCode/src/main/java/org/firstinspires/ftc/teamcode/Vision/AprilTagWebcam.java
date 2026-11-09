@@ -51,6 +51,8 @@ public class AprilTagWebcam {
                         )
                 )
                 .setCameraResolution(new Size(640, 480))
+                .enableLiveView(true)
+                .setAutoStopLiveView(false)
                 .addProcessor(aprilTagProcessor)
                 .build();
     }
@@ -139,6 +141,22 @@ public class AprilTagWebcam {
                         singleDetection.ftcPose.elevation
                 )
         );
+        telemetry.update();
     }
+
+    public void resumeStreaming() {
+        if (visionPortal != null) {
+            visionPortal.resumeStreaming();
+        }
+    }
+
+    public VisionPortal.CameraState getCameraState() {
+        if (visionPortal == null) {
+            return null;
+        }
+
+        return visionPortal.getCameraState();
+    }
+
 
 }
