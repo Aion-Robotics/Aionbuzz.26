@@ -52,7 +52,6 @@ public class AprilTagWebcam {
                 )
                 .setCameraResolution(new Size(640, 480))
                 .enableLiveView(true)
-                .setAutoStopLiveView(false)
                 .addProcessor(aprilTagProcessor)
                 .build();
     }
@@ -65,12 +64,9 @@ public class AprilTagWebcam {
         return detectedTags;
     }
 
-    public AprilTagDetection getTagBySpecificId(int id) {
-
+    public AprilTagWebcam getTagBySpecificId(int id) {
         for (AprilTagDetection detection : detectedTags) {
-
             if (detection instanceof AprilTagSingleDetection) {
-
                 AprilTagSingleDetection singleDetection =
                         (AprilTagSingleDetection) detection;
 
@@ -82,7 +78,6 @@ public class AprilTagWebcam {
 
         return null;
     }
-
 
     public void stop() {
 

@@ -20,38 +20,32 @@ public class GyroStraight extends LinearOpMode {
 
     // Distancia do deslocamento.
     double distanciaTeste = 80.0; // cm
-
     // Diametro da roda convencional.
     double diametroRoda = 9.6; // cm
-
     // Encoder do Yellow Jacket 312 RPM.
     double ticksPorVolta = 537.6;
-
     // Velocidades reduzidas.
     double velocidadeMinima = 0.1;
     double velocidadeMaxima = 0.12;
-
     // Tempo de aceleracao gradual.
-    double tempoAceleracao = 2.5;
-
+    double tempoAceleracao = 1.5;
     // Inicio da desaceleracao.
-    double distanciaDesaceleracao = 35.0;
-
+    double distanciaDesaceleracao = 55.0;
     // Tempo maximo do deslocamento.
-    double tempoMaximoDeslocamento = 15.0;
+    double tempoMaximoDeslocamento = 12.0;
 
     // =========================================
     // GYROSTRAIGHT - CONTROLE PD
     // =========================================
 
     // Ganho proporcional.
-    double kpDirecao = 1.2;
+    double kpDirecao = -0.012;
 
     // Ganho derivativo.
-    double kdDirecao = 1.2;
+    double kdDirecao = -0.012;
 
     // Limite absoluto da correcao.
-    double limiteCorrecao = 0.4;
+    double limiteCorrecao = 0.6;
 
     // Tolerancia angular.
     double toleranciaAngular = 1.5;
@@ -60,16 +54,16 @@ public class GyroStraight extends LinearOpMode {
     // CONTROLE DE GIRO
     // =========================================
 
-    double kpGiro = 2.6;
-    double kdGiro = 2.6;
+    double kpGiro = -0.026;
+    double kdGiro = -0.026;
 
-    double potenciaMinimaGiro = 0.07;
+    double potenciaMinimaGiro = 0.1;
     double potenciaMaximaGiro = 0.15;
 
     double toleranciaGiro = 1.5;
 
     // Velocidade angular para considerar estabilizado.
-    double velocidadeAngularFinal = 0.5;
+    double velocidadeAngularFinal = 0.75;
 
     // Tempo maximo para cada giro.
     double tempoMaximoGiro = 7.0;
@@ -204,6 +198,7 @@ public class GyroStraight extends LinearOpMode {
         if (!deslocamentoConcluido || !opModeIsActive()) {
             return;
         }
+
 
 
 
@@ -353,7 +348,7 @@ public class GyroStraight extends LinearOpMode {
                     Range.clip(
                             cronometro.seconds()
                                     / tempoAceleracao,
-                            0, 0.75
+                            0, 0.65
                     );
 
             double potenciaAceleracao =
@@ -369,7 +364,7 @@ public class GyroStraight extends LinearOpMode {
             double fatorDesaceleracao =
                     Range.clip(
                             restante / distanciaDesaceleracao,
-                            0, 0.75
+                            0, 0.65
                     );
 
             double potenciaDesaceleracao =
@@ -391,7 +386,7 @@ public class GyroStraight extends LinearOpMode {
             double limiteAtual =
                     Math.min(
                             limiteCorrecao,
-                            potenciaBase * 0.30
+                            potenciaBase * 0.35
                     );
 
             correcao = Range.clip(
@@ -459,7 +454,7 @@ public class GyroStraight extends LinearOpMode {
 
         cronometro.reset();
 
-        int leiturasEstaveis = 0;
+        int leiturasEstaveis = 5;
 
         while (opModeIsActive()
                 && cronometro.seconds()
@@ -568,14 +563,11 @@ public class GyroStraight extends LinearOpMode {
             idle();
         }
         pararMotores();
-
         return false;
     }
-
     // =========================================
     // 8. PARADA DOS MOTORES
     // =========================================
-
     void pararMotores() {
 
         motorDir.setPower(0);
