@@ -41,7 +41,7 @@ public class AprilTagWebcamExample extends OpMode {
         );
 
         telemetry.addData(
-                "Quantidade de detecções",
+                "Quantidade de deteccoes",
                 aprilTagWebcam.getDetectedTags().size()
         );
 

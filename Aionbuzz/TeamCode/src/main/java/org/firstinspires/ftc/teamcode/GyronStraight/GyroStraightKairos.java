@@ -128,9 +128,6 @@ public class GyroStraightKairos extends LinearOpMode {
             telemetry.addData("Motor esquerdo", potenciaEsq);
             telemetry.update();
         }
-        imu.resetYaw();
-                ultimoYaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-        anguloContinuo = 0;
 
         // Se atingir o tempo limite ou receber pedido de parada
         pararMotores();
