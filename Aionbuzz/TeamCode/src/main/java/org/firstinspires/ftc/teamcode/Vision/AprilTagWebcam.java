@@ -12,6 +12,8 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,32 @@ public class AprilTagWebcam {
     public List<AprilTagDetection> getDetectedTags() {
         return detectedTags;
     }
+
+    public AprilTagClusterDetection getClusterByName(
+            String shortName
+    ) {
+        for (AprilTagDetection detection :
+                detectedTags) {
+
+            if (detection
+                    instanceof AprilTagClusterDetection) {
+
+                AprilTagClusterDetection cluster =
+                        (AprilTagClusterDetection) detection;
+
+                if (cluster.metadata != null
+                        && cluster.metadata.shortName
+                        .equals(shortName)) {
+
+                    return cluster;
+                }
+            }
+        }
+
+        return null;
+    }
+
+
 
     public AprilTagDetection getTagBySpecificId(int id) {
         for (AprilTagDetection detection : detectedTags) {
@@ -151,6 +179,7 @@ public class AprilTagWebcam {
         }
 
         return visionPortal.getCameraState();
+
     }
 
 
