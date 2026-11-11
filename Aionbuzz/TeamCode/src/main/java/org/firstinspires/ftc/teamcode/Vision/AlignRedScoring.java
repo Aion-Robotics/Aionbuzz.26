@@ -39,8 +39,7 @@ public class AlignRedScoring extends OpMode {
 
     private static final double TOLERANCIA_ANGULO_GRAUS = 2.0;
     private static final double TIMEOUT_BUSCA_SEGUNDOS = 5.0;
-    private static final double TIMEOUT_PERDA_SEGUNDOS =
-            0.5;
+    private static final double TIMEOUT_PERDA_SEGUNDOS = 0.5;
 
     private final ElapsedTime cronometroBusca = new ElapsedTime();
 
