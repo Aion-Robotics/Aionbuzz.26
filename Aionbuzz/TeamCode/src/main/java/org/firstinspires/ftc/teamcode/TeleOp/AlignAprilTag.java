@@ -21,25 +21,48 @@ public class AlignAprilTag extends OpMode {
     private DcMotor motorEsq;
     private DcMotor motorIntake;
 
+    // Processador de visão e concexão com a webcam usb
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
 
+    //Estado do Programa
     private boolean modoAlinhamento = false;
     private boolean ultimoA = false;
 
+    /*Estados anteriores do D-pad.
+     Eles impedem que que um botão segurado seja processado repetidamente em todos os ciclos do loop*/
     private boolean ultimoUp = false;
     private boolean ultimoRight = false;
     private boolean ultimoDown = false;
     private boolean ultimoLeft = false;
 
+    /*
+    Parâmetros de distância do Alinhamento Automático.
+    Todas as distâncias abaixo estão em polegadas porque ftcPose.range retorna a distância da câmera
+    até a April Tag em Polegadas.
+     */
     private static final double DISTANCIA_ALVO = 18.0;
+
+    //Ganhos proporcionais: erro maior gera correção maior
     private static final double KP_GIRO = 0.018;
     private static final double KP_DISTANCIA = 0.035;
-    private static final double MAX_GIRO = 0.35;
-    private static final double MAX_AVANCO = 0.35;
+
+    //Limites de segurança para o teste automático
+    private static final double MAX_GIRO = 0.20;
+    private static final double MAX_AVANCO = 0.20;
+
+    //Quando os erros ficam dentro dessa faixa, o robô para
     private static final double TOLERANCIA_GIRO = 2.0;
     private static final double TOLERANCIA_DISTANCIA = 1.5;
 
+
+    /*
+     * Grupo de tags aceito inicialmente. Os grupos são trocados pelo D-pad:
+     * cima    = 30-33, vermelha lado oposto da audiência
+     * direita = 34-37, vermelha lado da audiência
+     * baixo   = 38-41, azul lado da audiência
+     * esquerda= 42-45, azul lado oposto da audiência
+     */
     private int[] tagsPermitidas = {30, 31, 32, 33};
     private String nomeGrupo = "Vermelha - lado oposto da audiencia";
 
@@ -67,8 +90,10 @@ public class AlignAprilTag extends OpMode {
 
     @Override
     public void loop() {
+        //Atualiza o grupo de April Tags se algum botão do D-pad foi pressionado
         selecionarGrupo();
 
+        //Alterna o modo somente na transição de solto para pressionado
         if (gamepad1.a && !ultimoA) {
             modoAlinhamento = !modoAlinhamento;
         }
@@ -80,7 +105,7 @@ public class AlignAprilTag extends OpMode {
             dirigirManualmente();
         }
 
-        motorIntake.setPower(gamepad1.left_bumper ? 0.75 : 0.0);
+        motorIntake.setPower(gamepad1.left_bumper ? 1.0 : 0.0);
 
         telemetry.addData("Modo", modoAlinhamento ? "ALINHAMENTO" : "MANUAL");
         telemetry.addData("Grupo", nomeGrupo);
@@ -89,7 +114,7 @@ public class AlignAprilTag extends OpMode {
 
     private void dirigirManualmente() {
         double frente = -gamepad1.left_stick_y;
-        double giro = gamepad1.left_stick_x;
+        double giro = -gamepad1.left_stick_x;
         double velocidade = gamepad1.right_bumper ? 1.0 : 0.5;
 
         motorEsq.setPower(Range.clip(
@@ -98,10 +123,15 @@ public class AlignAprilTag extends OpMode {
                 (frente - giro) * velocidade, -1.0, 1.0));
     }
 
+    /*
+     * Procura a tag selecionada e transforma os erros de visão em potência.
+     * bearing indica o erro horizontal em graus; range indica a distância.
+     */
     private void alinharComAprilTag() {
         AprilTagDetection alvo = encontrarMelhorAlvo(
                 aprilTag.getDetections());
 
+        //Sem tag váida ou sem pose, o robô para por segurança
         if (alvo == null || alvo.ftcPose == null) {
             pararBase();
             telemetry.addLine("Nenhuma tag do grupo encontrada");
@@ -112,6 +142,7 @@ public class AlignAprilTag extends OpMode {
         double distancia = alvo.ftcPose.range;
         double erroDistancia = distancia - DISTANCIA_ALVO;
 
+        //Controle proporcional com limites para evitar movimentos bruscos
         double giro = Range.clip(
                 bearing * KP_GIRO, -MAX_GIRO, MAX_GIRO);
         double avanco = Range.clip(
@@ -127,6 +158,7 @@ public class AlignAprilTag extends OpMode {
             pararBase();
             telemetry.addLine("ALINHADO COM A HIVE");
         } else {
+            //Como a base é tank, o giro é obtido com potências diferentes
             motorEsq.setPower(Range.clip(
                     avanco + giro, -1.0, 1.0));
             motorDir.setPower(Range.clip(
@@ -140,6 +172,10 @@ public class AlignAprilTag extends OpMode {
         telemetry.addData("Erro distancia", "%.1f pol", erroDistancia);
     }
 
+    /*
+     * Escolhe a tag válida mais próxima dentro do grupo selecionado.
+     * Tags de outros grupos são ignoradas para evitar escolher outra Hive.
+     */
     private AprilTagDetection encontrarMelhorAlvo(
             List<AprilTagDetection> deteccoes) {
 
@@ -164,9 +200,8 @@ public class AlignAprilTag extends OpMode {
     }
 
     /*
-     * Compatibilidade entre versões/classe importada do SDK.
-     * Primeiro procura um campo público chamado id.
-     * Se não existir, procura um método getId().
+     * Lê o identificador sem depender de uma única versão da classe do SDK.
+     * Primeiro tenta o campo público id; depois tenta getId().
      */
     private int obterIdDaTag(AprilTagDetection deteccao) {
         try {
@@ -183,6 +218,7 @@ public class AlignAprilTag extends OpMode {
         }
     }
 
+    // Retorna true somente se o ID pertence ao grupo escolhido no D-pad.
     private boolean tagEstaNoGrupo(int id) {
         for (int tag : tagsPermitidas) {
             if (tag == id) {
@@ -192,6 +228,7 @@ public class AlignAprilTag extends OpMode {
         return false;
     }
 
+    /* Seleciona um dos quatro lados das duas Hives pelo D-pad. */
     private void selecionarGrupo() {
         if (gamepad1.dpad_up && !ultimoUp) {
             tagsPermitidas = new int[]{30, 31, 32, 33};
@@ -229,6 +266,7 @@ public class AlignAprilTag extends OpMode {
         pararBase();
         motorIntake.setPower(0.0);
 
+        // Fecha a webcam e libera os recursos de visão ao terminar o OpMode.
         if (visionPortal != null) {
             visionPortal.close();
         }
