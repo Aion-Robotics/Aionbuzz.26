@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.GyronStraight;
+package org.firstinspires.ftc.teamcode.GyroStraight;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;

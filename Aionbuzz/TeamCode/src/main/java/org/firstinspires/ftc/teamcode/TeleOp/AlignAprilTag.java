@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -20,8 +22,9 @@ public class AlignAprilTag extends OpMode {
     private DcMotor motorDir;
     private DcMotor motorEsq;
     private DcMotor motorIntake;
+    private CRServo servoTransfer;
 
-    // Processador de visão e concexão com a webcam usb
+    // Processador de visão e conexão com a webcam usb
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
 
@@ -52,7 +55,7 @@ public class AlignAprilTag extends OpMode {
     private static final double MAX_AVANCO = 0.20;
 
     //Quando os erros ficam dentro dessa faixa, o robô para
-    private static final double TOLERANCIA_GIRO = 2.0;
+    private static final double TOLERANCIA_GIRO = 1.0;
     private static final double TOLERANCIA_DISTANCIA = 1.5;
 
 
@@ -106,6 +109,7 @@ public class AlignAprilTag extends OpMode {
         }
 
         motorIntake.setPower(gamepad1.left_bumper ? 1.0 : 0.0);
+        servoTransfer.setPower(gamepad1.left_trigger_pressed ? -1.0 : 0.0);
 
         telemetry.addData("Modo", modoAlinhamento ? "ALINHAMENTO" : "MANUAL");
         telemetry.addData("Grupo", nomeGrupo);
