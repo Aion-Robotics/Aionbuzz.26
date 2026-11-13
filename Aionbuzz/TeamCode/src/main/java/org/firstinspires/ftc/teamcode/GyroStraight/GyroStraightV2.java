@@ -44,8 +44,8 @@ public class GyroStraightV2 extends LinearOpMode {
         // Configuração do IMU conforme a orientação física da REV Hub.
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot orientacao = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                RevHubOrientationOnRobot.UsbFacingDirection.UP
         );
 
         imu.initialize(new IMU.Parameters(orientacao));
