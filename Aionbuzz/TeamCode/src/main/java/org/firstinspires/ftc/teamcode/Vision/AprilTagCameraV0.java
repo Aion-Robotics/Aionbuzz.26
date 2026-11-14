@@ -13,10 +13,10 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.List;
 
 @TeleOp
-public class AprilTagCamera extends OpMode {
+public class AprilTagCameraV0 extends OpMode {
 
     private static final int CAMERA_WIDTH = 640;
     private static final int CAMERA_HEIGHT = 480;
@@ -52,8 +52,8 @@ public class AprilTagCamera extends OpMode {
     public void loop() {
         selecionarHive();
 
-        ArrayList<AprilTagDetection> deteccoes = aprilTagProcessor.getDetections();
-
+        List<AprilTagDetection> deteccoes =
+                aprilTagProcessor.getDetections();
         AprilTagDetection melhorAlvo = encontrarMelhorAlvo(deteccoes);
 
         telemetry.addData("Portal", visionPortal.getCameraState());
@@ -62,40 +62,49 @@ public class AprilTagCamera extends OpMode {
         telemetry.addData("Detecções Recebidas", deteccoes.size());
         telemetry.update();
 
-        if (deteccoes.isEmpty()){
-            telemetry.addLine("Nenhuma Detecção Recebida pelo Processador");
+        if (deteccoes.isEmpty()) {
+            telemetry.addLine(
+                    "Nenhuma detecção recebida pelo processador"
+            );
         } else {
-            for (int i = 0; i < deteccoes.size(); i++){
+            for (int i = 0; i < deteccoes.size(); i++) {
                 AprilTagDetection deteccao = deteccoes.get(i);
-                int id  = obterIdDaTag(deteccao);
+
+                int id = obterIdDaTag(deteccao);
                 boolean poseValida = deteccao.ftcPose != null;
 
                 telemetry.addData(
-                        "Tag %d",
-                        "ID = %d | pose = %d",
-                        i + 1,
+                        "Tag " + (i + 1),
+                        "ID = %d | pose = %s",
                         id,
-                        poseValida ? "VALIDA" : "NULA");
+                        poseValida ? "VALIDA" : "NULA"
+                );
 
-                if (poseValida){
+                telemetry.addData(
+                        "Pertence à hive",
+                        idPertenceAHive(id) ? "SIM" : "NAO"
+                );
+
+                if (poseValida) {
                     telemetry.addData(
-                            "pose %d",
-                            "range = %.1f in | bearing = &.1fº | yaw = %.1fº",
-                            i + 1,
+                            "Pose " + (i + 1),
+                            "range = %.1f in | bearing = %.1f graus | yaw = %.1f graus",
                             deteccao.ftcPose.range,
                             deteccao.ftcPose.bearing,
-                            deteccao.ftcPose.yaw);
+                            deteccao.ftcPose.yaw
+                    );
                 }
             }
         }
 
+
         if (melhorAlvo == null){
-            telemetry.addLine("Alvo da Hive: nenhum com Pose Válida");
+            telemetry.addLine("Alvo da Hive: Nenhum com Pose Válida");
         } else {
             telemetry.addData("Alvo da Hive", "ID %d", obterIdDaTag(melhorAlvo));
             telemetry.addData("Alvo range", "%.1f in", melhorAlvo.ftcPose.range);
             telemetry.addData("Alvo bearing", "%.1fº", melhorAlvo.ftcPose.bearing);
-            telemetry.addLine("Câmera e pose prontas para integração posterior");
+            telemetry.addLine("Câmera e Pose prontas para integração posterior");
         }
         telemetry.update();
     }
@@ -112,7 +121,7 @@ public class AprilTagCamera extends OpMode {
         }
         if (gamepad1.dpad_down && !ultimoDown){
             tagsDaHive = new int[]{38, 39, 40, 41};
-            nomeHive = "Azul = Lado da Audiência";
+            nomeHive = "Azul - Lado da Audiência";
         }
         if (gamepad1.dpad_left && !ultimoLeft){
             tagsDaHive = new int[]{42, 43, 44, 45};
@@ -126,9 +135,9 @@ public class AprilTagCamera extends OpMode {
     }
 
     private AprilTagDetection encontrarMelhorAlvo(
-            ArrayList<AprilTagDetection> deteccoes) {
+            List<AprilTagDetection> deteccoes){
 
-        AprilTagDetection melhor = null;
+    AprilTagDetection melhor = null;
         double menorRange = Double.POSITIVE_INFINITY;
 
         for (AprilTagDetection deteccao : deteccoes) {
