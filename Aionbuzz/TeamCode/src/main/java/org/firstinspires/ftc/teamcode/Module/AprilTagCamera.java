@@ -7,19 +7,19 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-@TeleOp
+@TeleOp(name = "Diagnóstico Câmera")
 public class AprilTagCamera extends OpMode {
 
     private static final int CAMERA_WIDTH = 640;
     private static final int CAMERA_HEIGHT = 480;
-    
+
     // Quantidade de ciclos válidos necessária para considerar a detecção estável.
     private static final int CICLOS_PARA_ESTABILIZAR = 3;
 
@@ -36,7 +36,6 @@ public class AprilTagCamera extends OpMode {
 
     private int ciclosComPoseValida;
     private int ciclosSemPoseValida;
-    private boolean deteccaoEstavelAnterior;
     private long ultimaPoseValidaMs;
 
     @Override
@@ -75,13 +74,12 @@ public class AprilTagCamera extends OpMode {
 
         for (int i = 0; i < deteccoes.size(); i++) {
             AprilTagDetection deteccao = deteccoes.get(i);
-            int id = obterIdDaTag(deteccao);
             boolean poseValida = deteccao.ftcPose != null;
 
             if (poseValida) {
                 temPoseValida = true;
 
-                if (idPertenceAHive(id)
+                if (deteccaoPertenceAHive(deteccao)
                         && deteccao.ftcPose.range < menorRange) {
                     menorRange = deteccao.ftcPose.range;
                     melhorAlvo = deteccao;
@@ -90,8 +88,8 @@ public class AprilTagCamera extends OpMode {
 
             telemetry.addData(
                     "Tag " + (i + 1),
-                    "ID=%d | pose=%s",
-                    id,
+                    "%s | pose=%s",
+                    obterIdentificacao(deteccao),
                     poseValida ? "VALIDA" : "NULA");
 
             if (poseValida) {
@@ -108,11 +106,6 @@ public class AprilTagCamera extends OpMode {
 
         boolean deteccaoEstavel =
                 ciclosComPoseValida >= CICLOS_PARA_ESTABILIZAR;
-
-        if (deteccaoEstavel && !deteccaoEstavelAnterior) {
-            gamepad1.rumble(300);
-        }
-        deteccaoEstavelAnterior = deteccaoEstavel;
 
         telemetry.addData("Portal", visionPortal.getCameraState());
         telemetry.addData("Resolucao", "%d x %d",
@@ -136,7 +129,7 @@ public class AprilTagCamera extends OpMode {
             telemetry.addLine("Alvo da hive: nenhum com pose valida");
         } else {
             telemetry.addData("Alvo da hive",
-                    "ID %d", obterIdDaTag(melhorAlvo));
+                    obterIdentificacao(melhorAlvo));
             telemetry.addData("Alvo range",
                     "%.1f in", melhorAlvo.ftcPose.range);
             telemetry.addData("Alvo bearing",
@@ -190,29 +183,36 @@ public class AprilTagCamera extends OpMode {
         return false;
     }
 
-    /** Compatibilidade com versões do SDK que ocultam AprilTagDetection.id. */
+    /*
+     * No SDK atual, somente AprilTagSingleDetection possui ID individual.
+     * AprilTagClusterDetection representa uma hive/conjunto e não possui
+     * um único ID para exibir.
+     */
     private int obterIdDaTag(AprilTagDetection deteccao) {
-        try {
-            Field campoId;
-            try {
-                campoId = deteccao.getClass().getField("id");
-            } catch (NoSuchFieldException e) {
-                campoId = deteccao.getClass().getDeclaredField("id");
-                campoId.setAccessible(true);
-            }
-            return campoId.getInt(deteccao);
-        } catch (Exception ignorado) {
-            try {
-                Method metodoId = deteccao.getClass().getMethod("getId");
-                Object resultado = metodoId.invoke(deteccao);
-                if (resultado instanceof Number) {
-                    return ((Number) resultado).intValue();
-                }
-            } catch (Exception ignoradoTambem) {
-                // Mantém o diagnóstico funcionando mesmo sem acesso ao ID.
-            }
-            return -1;
+        if (deteccao instanceof AprilTagSingleDetection) {
+            return ((AprilTagSingleDetection) deteccao).id;
         }
+        return -1;
+    }
+
+    private String obterIdentificacao(AprilTagDetection deteccao) {
+        if (deteccao instanceof AprilTagSingleDetection) {
+            return "ID=" + ((AprilTagSingleDetection) deteccao).id;
+        }
+        if (deteccao instanceof AprilTagClusterDetection) {
+            return "CLUSTER/HIVE";
+        }
+        return "TIPO DESCONHECIDO";
+    }
+
+    private boolean deteccaoPertenceAHive(AprilTagDetection deteccao) {
+        if (deteccao instanceof AprilTagSingleDetection) {
+            return idPertenceAHive(obterIdDaTag(deteccao));
+        }
+
+        // Um cluster já representa a hive como um alvo único; não existe
+        // ID individual para compará-lo com os arrays de tags.
+        return deteccao instanceof AprilTagClusterDetection;
     }
 
     @Override
@@ -222,4 +222,3 @@ public class AprilTagCamera extends OpMode {
         }
     }
 }
-
