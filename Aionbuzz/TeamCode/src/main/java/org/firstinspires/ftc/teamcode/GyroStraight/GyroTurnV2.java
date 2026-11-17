@@ -54,7 +54,7 @@ public class GyroTurnV2 extends OpMode {
 
         RevHubOrientationOnRobot orientacao =
                 new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                        RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                         RevHubOrientationOnRobot.UsbFacingDirection.UP
                 );
 

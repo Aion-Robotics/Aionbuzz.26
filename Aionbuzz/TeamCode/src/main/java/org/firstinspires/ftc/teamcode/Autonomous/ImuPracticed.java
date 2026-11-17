@@ -18,7 +18,7 @@ public class ImuPracticed extends LinearOpMode {
     IMU imu;
     double targetAngle;
     DcMotor motorEsq, motorDir;
-    static final double KP = 12;
+    static final double KP = -12;
     private double basePower = POTENCIA_MAXIMA;
 
     @Override

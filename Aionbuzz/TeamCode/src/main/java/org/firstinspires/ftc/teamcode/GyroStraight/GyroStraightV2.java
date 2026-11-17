@@ -24,11 +24,9 @@ public class GyroStraightV2 extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // Mapeamento dos motores
         motorDir = hardwareMap.get(DcMotor.class, "motorDir");
         motorEsq = hardwareMap.get(DcMotor.class, "motorEsq");
 
-        // Inverta este motor caso os dois lados não avancem na mesma direção.
         motorEsq.setDirection(DcMotor.Direction.REVERSE);
 
         motorDir.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -44,7 +42,7 @@ public class GyroStraightV2 extends LinearOpMode {
         // Configuração do IMU conforme a orientação física da REV Hub.
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot orientacao = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                 RevHubOrientationOnRobot.UsbFacingDirection.UP
         );
 
@@ -70,15 +68,11 @@ public class GyroStraightV2 extends LinearOpMode {
         sleep(2000);
     }
 
-    /**
-     * Move o robô em linha reta usando os encoders para a distância
-     * e o IMU para corrigir o desvio angular.
-     */
     private void gyroStraight(double distanciaAlvoCm) {
         double ticksAlvo = (distanciaAlvoCm / CIRCUNFERENCIA_RODA_CM)
                 * TICKS_POR_VOLTA;
 
-        // Ganho da correção angular. Ajuste durante os testes do robô.
+        // Ganho da correção angular.
         double kp = -0.012;
 
         while (opModeIsActive()) {
