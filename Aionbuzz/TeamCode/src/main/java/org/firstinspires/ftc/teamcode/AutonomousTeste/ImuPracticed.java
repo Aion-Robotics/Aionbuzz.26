@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Autonomous;
+package org.firstinspires.ftc.teamcode.AutonomousTeste;
 
 import static org.firstinspires.ftc.teamcode.TeleOp.DriveTrain.POTENCIA_MAXIMA;
 

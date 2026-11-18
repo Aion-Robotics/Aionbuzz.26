@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.Module;
 
 import android.util.Size;
 
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;      
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -14,7 +14,6 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
 import java.util.ArrayList;
 
-
 @TeleOp(name = "Diagnóstico Câmera 2")
 public class Camera extends OpMode {
 
@@ -23,16 +22,12 @@ public class Camera extends OpMode {
 
     private static final int CICLOS_PARA_ESTABILIZAR = 3;
 
-    /*
-     * Este robô possui somente as duas hives vermelhas disponíveis.
-     * As opções azuis ficam desativadas até existirem tags corretas.
-     */
     private static final boolean FILTRAR_CLUSTERS_POR_METADATA = true;
 
     private static final String META_HIVE_UP = "RED SCORING";
     private static final String META_HIVE_RIGHT = "RED AUDIENCE";
-    private static final String META_HIVE_DOWN = "";
-    private static final String META_HIVE_LEFT = "";
+    private static final String META_HIVE_DOWN = "BLUE AUDIENCE";
+    private static final String META_HIVE_LEFT = "BLUE SCORING";
 
     private AprilTagProcessor aprilTagProcessor;
     private VisionPortal visionPortal;
@@ -65,12 +60,17 @@ public class Camera extends OpMode {
 
         telemetry.addLine("Diagnostico de camera inicializado");
         telemetry.addData("Camera", "Webcam 1");
-        telemetry.addData("Resolucao solicitada", "%d x %d",
-                CAMERA_WIDTH, CAMERA_HEIGHT);
-        telemetry.addData("Filtro por metadata", "%s",
-                FILTRAR_CLUSTERS_POR_METADATA ? "ATIVO" : "DESATIVADO");
+        telemetry.addData("Resolucao solicitada", "%d x %d", CAMERA_WIDTH, CAMERA_HEIGHT);
+
+        telemetry.addData("Filtro por metadata", FILTRAR_CLUSTERS_POR_METADATA
+                        ? "ATIVO"
+                        : "DESATIVADO");
+
         telemetry.addLine("Nenhum mecanismo sera acionado");
-        telemetry.addLine("D-pad: seleciona a hive");
+        telemetry.addLine("D-pad para cima: RED SCORING");
+        telemetry.addLine("D-pad para direita: RED AUDIENCE");
+        telemetry.addLine("D-pad para baixo: descobrir hive azul 1");
+        telemetry.addLine("D-pad para esquerda: descobrir hive azul 2");
         telemetry.update();
     }
 
@@ -78,8 +78,7 @@ public class Camera extends OpMode {
     public void loop() {
         selecionarHive();
 
-        ArrayList<AprilTagDetection> deteccoes =
-                aprilTagProcessor.getDetections();
+        ArrayList<AprilTagDetection> deteccoes = aprilTagProcessor.getDetections();
 
         AprilTagDetection melhorAlvo = null;
         double menorRange = Double.POSITIVE_INFINITY;
@@ -95,16 +94,13 @@ public class Camera extends OpMode {
                 temPoseValida = true;
             }
 
-            telemetry.addData(
-                    "Tag " + (i + 1),
-                    "%s | pose=%s",
+            telemetry.addData("Tag " + (i + 1), "%s | pose=%s",
                     obterIdentificacao(deteccao),
                     poseValida ? "VALIDA" : "NULA");
 
             if (deteccao instanceof AprilTagClusterDetection) {
                 exibirMetadataDoCluster(
-                        (AprilTagClusterDetection) deteccao,
-                        i + 1);
+                    (AprilTagClusterDetection) deteccao, i + 1);
             }
 
             if (poseValida) {
@@ -113,7 +109,8 @@ public class Camera extends OpMode {
                         "range=%.1f in | bearing=%.1f | yaw=%.1f",
                         deteccao.ftcPose.range,
                         deteccao.ftcPose.bearing,
-                        deteccao.ftcPose.yaw);
+                        deteccao.ftcPose.yaw
+                );
             }
 
             if (poseValida
@@ -130,53 +127,38 @@ public class Camera extends OpMode {
                 ciclosComAlvoValido >= CICLOS_PARA_ESTABILIZAR;
 
         telemetry.addData("Portal", visionPortal.getCameraState());
-        telemetry.addData("Resolucao", "%d x %d",
-                CAMERA_WIDTH, CAMERA_HEIGHT);
+        telemetry.addData("Resolucao", "%d x %d", CAMERA_WIDTH, CAMERA_HEIGHT);
         telemetry.addData("Hive selecionada", nomeHive);
         telemetry.addData("Metadata esperada", metadataHiveSelecionada);
-        telemetry.addData("Deteccao bruta",
-                deteccoes.isEmpty() ? "NAO" : "SIM");
-        telemetry.addData("Pose valida em alguma deteccao",
-                temPoseValida ? "SIM" : "NAO");
-        telemetry.addData("Alvo valido da hive",
-                melhorAlvo == null ? "NAO" : "SIM");
-        telemetry.addData("Ciclos de alvo validos",
-                ciclosComAlvoValido);
-        telemetry.addData("Ciclos sem alvo valido",
-                ciclosSemAlvoValido);
-        telemetry.addData("Estado do alvo",
-                alvoEstavel ? "ESTAVEL" : "INSTAVEL");
+        telemetry.addData("Deteccao bruta", deteccoes.isEmpty() ? "NAO" : "SIM");
+        telemetry.addData("Pose valida em alguma deteccao", temPoseValida ? "SIM" : "NAO");
+        telemetry.addData("Alvo valido da hive", melhorAlvo == null ? "NAO" : "SIM");
+        telemetry.addData("Ciclos de alvo validos", ciclosComAlvoValido);
+        telemetry.addData("Ciclos sem alvo valido", ciclosSemAlvoValido);
+        telemetry.addData("Estado do alvo", alvoEstavel ? "ESTAVEL" : "INSTAVEL");
 
         if (ultimoAlvoValidoMs > 0) {
-            telemetry.addData("Tempo desde ultimo alvo",
-                    "%d ms", System.currentTimeMillis() - ultimoAlvoValidoMs);
+            telemetry.addData("Tempo desde ultimo alvo", "%d ms",
+                    System.currentTimeMillis() - ultimoAlvoValidoMs);
         }
 
         if (melhorAlvo == null) {
-            telemetry.addLine("Alvo da hive: nenhum com pose e metadata/ID validos");
+            telemetry.addLine("Alvo da hive: nenhum com pose valido");
         } else {
-            telemetry.addData("Alvo da hive",
-                    obterIdentificacao(melhorAlvo));
-            telemetry.addData("Alvo range",
-                    "%.1f in", melhorAlvo.ftcPose.range);
-            telemetry.addData("Alvo bearing",
-                    "%.1f", melhorAlvo.ftcPose.bearing);
+            telemetry.addData("Alvo da hive", obterIdentificacao(melhorAlvo));
+            telemetry.addData("Alvo range", "%.1f in", melhorAlvo.ftcPose.range);
+            telemetry.addData("Alvo bearing", "%.1f", melhorAlvo.ftcPose.bearing);
         }
-
         telemetry.update();
     }
 
-    private void exibirMetadataDoCluster(
-            AprilTagClusterDetection cluster,
-            int numero) {
+    private void exibirMetadataDoCluster(AprilTagClusterDetection cluster, int numero) {
         if (cluster.metadata == null) {
-            telemetry.addData(
-                    "Cluster " + numero + " metadata",
+            telemetry.addData("Cluster " + numero + " metadata",
                     "SEM METADATA | %d%% encontrado",
                     cluster.percentClusterFound);
         } else {
-            telemetry.addData(
-                    "Cluster " + numero + " metadata",
+            telemetry.addData("Cluster " + numero + " metadata",
                     "%s | %d%% encontrado",
                     cluster.metadata.name,
                     cluster.percentClusterFound);
@@ -206,16 +188,15 @@ public class Camera extends OpMode {
             metadataHiveSelecionada = META_HIVE_RIGHT;
         }
         if (gamepad1.dpad_down && !ultimoDown) {
-            tagsDaHive = new int[0];
-            nomeHive = "INDISPONIVEL - tags azuis incorretas";
+            tagsDaHive = new int[]{38, 39, 40, 41};
+            nomeHive = "Azul - Lado da Audiencia";
             metadataHiveSelecionada = META_HIVE_DOWN;
         }
         if (gamepad1.dpad_left && !ultimoLeft) {
-            tagsDaHive = new int[0];
-            nomeHive = "INDISPONIVEL - tags azuis incorretas";
+            tagsDaHive = new int[]{42, 43, 44, 45};
+            nomeHive = "Azul - Lado Oposto da Audiencia";
             metadataHiveSelecionada = META_HIVE_LEFT;
         }
-
         ultimoUp = gamepad1.dpad_up;
         ultimoRight = gamepad1.dpad_right;
         ultimoDown = gamepad1.dpad_down;
@@ -227,19 +208,16 @@ public class Camera extends OpMode {
             int id = ((AprilTagSingleDetection) deteccao).id;
             return idPertenceAHive(id);
         }
-
         if (deteccao instanceof AprilTagClusterDetection) {
-            AprilTagClusterDetection cluster =
-                    (AprilTagClusterDetection) deteccao;
-
+            AprilTagClusterDetection cluster = (AprilTagClusterDetection) deteccao;
             if (!FILTRAR_CLUSTERS_POR_METADATA) {
                 return true;
             }
-
             return cluster.metadata != null
-                    && cluster.metadata.name.equals(metadataHiveSelecionada);
+                    && cluster.metadata.name.equals(
+                    metadataHiveSelecionada
+            );
         }
-
         return false;
     }
 
