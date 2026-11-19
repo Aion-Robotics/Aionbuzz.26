@@ -34,15 +34,15 @@ public class AlignAprilTag extends OpMode {
     private static final double DISTANCIA_ALVO = 18.0;
     private static final double KP_BEARING = 0.015;
     private static final double KP_RANGE = 0.025;
-    private static final double KP_YAW = 0.010;
+    private static final double KP_YAW = 0.018;
 
     private static final double TOLERANCIA_BEARING = 2.0;
     private static final double TOLERANCIA_RANGE = 2.0;
     private static final double TOLERANCIA_YAW = 3.0;
 
-    private static final double MAX_GIRO = 0.10;
+    private static final double MAX_GIRO = 0.15;
     private static final double MAX_AVANCO = 0.10;
-    private static final double MAX_GIRO_IMU = 0.15;
+    private static final double MAX_GIRO_IMU = 0.20;
 
     private static final int CICLOS_ALVO_ESTAVEL = 3;
     private static final boolean INVERTER_GIRO_IMU = false;
@@ -189,7 +189,7 @@ public class AlignAprilTag extends OpMode {
         } else {
             pararBase();
             telemetry.addData("Modo", "ALINHAMENTO");
-            telemetry.addData("Modo", "PRONTO");
+            telemetry.addData("Fase", "PRONTO");
             telemetry.addData("Hive", metadataDaHive());
         }
     }
@@ -229,7 +229,14 @@ public class AlignAprilTag extends OpMode {
 
         ciclosAlvoValido = 0;
         double giro = Range.clip(bearing * KP_BEARING, -MAX_GIRO, MAX_GIRO);
-        double avanco = Range.clip(erroRange * KP_RANGE, -MAX_AVANCO, MAX_AVANCO);
+        double avanco = erroRange * KP_RANGE;
+
+        if (Math.abs(erroRange) > TOLERANCIA_RANGE
+                && Math.abs(avanco) < 0.08) {
+            avanco = Math.copySign(0.08, avanco);
+        }
+
+        avanco = Range.clip(avanco, -MAX_AVANCO, MAX_AVANCO);
 
         aplicarBase(avanco, giro);
 
@@ -254,8 +261,8 @@ public class AlignAprilTag extends OpMode {
             giro = -giro;
         }
 
-        motorEsq.setPower(-giro);
-        motorDir.setPower(giro);
+        motorEsq.setPower(giro);
+        motorDir.setPower(-giro);
 
         telemetry.addData("Modo", "ALINHAMENTO");
         telemetry.addData("Fase", "GIRAR COSTAS");
@@ -285,34 +292,24 @@ public class AlignAprilTag extends OpMode {
         return melhor;
     }
 
-    private boolean deteccaoPertenceAHive(AprilTagDetection deteccao){
-        if (deteccao instanceof AprilTagClusterDetection){
-            AprilTagClusterDetection cluster = (AprilTagClusterDetection) deteccao;
-            return cluster.metadata != null
-                    && cluster.metadata.name.equals(metadataDaHive());
+    private boolean deteccaoPertenceAHive(AprilTagDetection deteccao) {
+        if (!(deteccao instanceof AprilTagClusterDetection)) {
+            return false;
         }
-        if (deteccao instanceof AprilTagSingleDetection){
-            int id = ((AprilTagSingleDetection)deteccao).id;
-            return idPertenceAHive(id);
+        if (deteccao.ftcPose == null) {
+            return false;
         }
-        return false;
+        AprilTagClusterDetection cluster =
+                (AprilTagClusterDetection) deteccao;
+        if (cluster.metadata == null) {
+            return false;
+        }
+        if (!cluster.metadata.name.equals(metadataDaHive())) {
+            return false;
+        }
+        return Math.abs(deteccao.ftcPose.roll) < 90.0;
     }
 
-    private boolean idPertenceAHive(int id){
-        switch (hiveSelecionada){
-            case RED_SCORING:
-                return id >= 30 && id <= 33;
-            case RED_AUDIENCE:
-                return id >= 34 && id <= 37;
-            case BLUE_AUDIENCE:
-                return id >= 38 && id <= 41;
-            case BLUE_SCORING:
-                return id >= 42 && id <= 45;
-
-            default:
-                return false;
-        }
-    }
 
     private void exibirDadosDoAlvo(AprilTagDetection alvo, double bearing, double range, double erroRange){
         telemetry.addData("Modo", "Alinhamento");
