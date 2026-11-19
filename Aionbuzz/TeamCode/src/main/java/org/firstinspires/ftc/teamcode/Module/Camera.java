@@ -65,12 +65,10 @@ public class Camera extends OpMode {
         telemetry.addData("Filtro por metadata", FILTRAR_CLUSTERS_POR_METADATA
                         ? "ATIVO"
                         : "DESATIVADO");
-
-        telemetry.addLine("Nenhum mecanismo sera acionado");
         telemetry.addLine("D-pad para cima: RED SCORING");
         telemetry.addLine("D-pad para direita: RED AUDIENCE");
-        telemetry.addLine("D-pad para baixo: descobrir hive azul 1");
-        telemetry.addLine("D-pad para esquerda: descobrir hive azul 2");
+        telemetry.addLine("D-pad para baixo: BLUE AUDIENCE");
+        telemetry.addLine("D-pad para esquerda: BLUE SCORING");
         telemetry.update();
     }
 
@@ -94,7 +92,7 @@ public class Camera extends OpMode {
                 temPoseValida = true;
             }
 
-            telemetry.addData("Tag " + (i + 1), "%s | pose=%s",
+            telemetry.addData("Tag " + (i + 1), "%s | pose = %s",
                     obterIdentificacao(deteccao),
                     poseValida ? "VALIDA" : "NULA");
 
@@ -106,7 +104,7 @@ public class Camera extends OpMode {
             if (poseValida) {
                 telemetry.addData(
                         "Pose " + (i + 1),
-                        "range=%.1f in | bearing=%.1f | yaw=%.1f",
+                        "range = %.1f in | bearing = %.1f | yaw = %.1f",
                         deteccao.ftcPose.range,
                         deteccao.ftcPose.bearing,
                         deteccao.ftcPose.yaw
@@ -127,7 +125,6 @@ public class Camera extends OpMode {
                 ciclosComAlvoValido >= CICLOS_PARA_ESTABILIZAR;
 
         telemetry.addData("Portal", visionPortal.getCameraState());
-        telemetry.addData("Resolucao", "%d x %d", CAMERA_WIDTH, CAMERA_HEIGHT);
         telemetry.addData("Hive selecionada", nomeHive);
         telemetry.addData("Metadata esperada", metadataHiveSelecionada);
         telemetry.addData("Deteccao bruta", deteccoes.isEmpty() ? "NAO" : "SIM");
@@ -232,7 +229,7 @@ public class Camera extends OpMode {
 
     private String obterIdentificacao(AprilTagDetection deteccao) {
         if (deteccao instanceof AprilTagSingleDetection) {
-            return "ID=" + ((AprilTagSingleDetection) deteccao).id;
+            return "ID = " + ((AprilTagSingleDetection) deteccao).id;
         }
         if (deteccao instanceof AprilTagClusterDetection) {
             return "CLUSTER/HIVE";

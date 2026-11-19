@@ -1,10 +1,9 @@
-package org.firstinspires.ftc.teamcode.TeleOp;
+package org.firstinspires.ftc.teamcode.Rascunhos;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -17,7 +16,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 @TeleOp(name = "Align AprilTag")
-public class AlignAprilTag extends OpMode {
+public class AlignAprilTagV1 extends OpMode {
 
     private DcMotor motorDir;
     private DcMotor motorEsq;
