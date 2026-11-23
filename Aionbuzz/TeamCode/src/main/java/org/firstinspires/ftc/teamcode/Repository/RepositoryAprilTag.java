@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -32,6 +33,16 @@ public class RepositoryAprilTag {
     private final AprilTagProcessor aprilTagProcessor;
     private final VisionPortal visionPortal;
     private final AprilTagAlignmentMath alinhamento;
+    private final ElapsedTime cronometroAlinhamento = new ElapsedTime();
+    private final ElapsedTime cronometroLoop = new ElapsedTime();
+
+    // Valores devem ser ajustados conforme a taxa de atualização da câmera.
+    private static final double TIMEOUT_ALINHAMENTO_SEGUNDOS = 8.0;
+    private static final int MAX_CICLOS_SEM_ALVO = 10;
+
+    private int ciclosSemAlvo;
+    private String motivoSaidaAutomatica = "";
+    private DebugSnapshot debugSnapshot;
 
     private Hive hiveSelecionada = Hive.RED_SCORING;
     private boolean modoAlinhamento;
@@ -46,6 +57,39 @@ public class RepositoryAprilTag {
         RED_AUDIENCE,
         BLUE_AUDIENCE,
         BLUE_SCORING
+    }
+
+    public static class DebugSnapshot {
+        public final boolean alvoEncontrado;
+        public final double bearing;
+        public final double range;
+        public final double erroBearing;
+        public final double erroRange;
+        public final double potenciaAvanco;
+        public final double potenciaGiro;
+        public final int ciclosEstaveis;
+        public final int ciclosSemAlvo;
+        public final double tempoAlinhamento;
+        public final AprilTagAlignmentMath.Status status;
+
+        public DebugSnapshot(boolean alvoEncontrado, double bearing,
+                             double range, double erroBearing,
+                             double erroRange, double potenciaAvanco,
+                             double potenciaGiro, int ciclosEstaveis,
+                             int ciclosSemAlvo, double tempoAlinhamento,
+                             AprilTagAlignmentMath.Status status) {
+            this.alvoEncontrado = alvoEncontrado;
+            this.bearing = bearing;
+            this.range = range;
+            this.erroBearing = erroBearing;
+            this.erroRange = erroRange;
+            this.potenciaAvanco = potenciaAvanco;
+            this.potenciaGiro = potenciaGiro;
+            this.ciclosEstaveis = ciclosEstaveis;
+            this.ciclosSemAlvo = ciclosSemAlvo;
+            this.tempoAlinhamento = tempoAlinhamento;
+            this.status = status;
+        }
     }
 
     public RepositoryAprilTag(HardwareMap hardwareMap) {
@@ -69,6 +113,10 @@ public class RepositoryAprilTag {
         pararBase();
         modoAlinhamento = false;
         alinhamento.reset();
+        ciclosSemAlvo = 0;
+        motivoSaidaAutomatica = "";
+        cronometroLoop.reset();
+        debugSnapshot = criarSnapshotSemAlvo();
         ultimoA = false;
         ultimoUp = false;
         ultimoRight = false;
@@ -77,18 +125,20 @@ public class RepositoryAprilTag {
     }
 
     public void update(Gamepad gamepad, Telemetry telemetry) {
+        double deltaTime = cronometroLoop.seconds();
+        cronometroLoop.reset();
+
         selecionarHive(gamepad);
         alternarModo(gamepad);
 
         if (modoAlinhamento) {
-            alinharComAprilTag(telemetry);
+            alinharComAprilTag(telemetry, deltaTime);
         } else {
             dirigirManualmente(gamepad);
             telemetry.addData("Modo", "MANUAL");
             telemetry.addData("Hive", metadataDaHive());
+            debugSnapshot = criarSnapshotSemAlvo();
         }
-
-        telemetry.update();
     }
 
     public void stop() {
@@ -102,6 +152,10 @@ public class RepositoryAprilTag {
 
     public boolean isModoAlinhamento() {
         return modoAlinhamento;
+    }
+
+    public DebugSnapshot getDebugSnapshot() {
+        return debugSnapshot;
     }
 
     private void selecionarHive(Gamepad gamepad) {
@@ -143,27 +197,94 @@ public class RepositoryAprilTag {
 
     private void iniciarAlinhamento() {
         alinhamento.reset();
+        ciclosSemAlvo = 0;
+        motivoSaidaAutomatica = "";
+        cronometroAlinhamento.reset();
         pararBase();
     }
 
-    private void alinharComAprilTag(Telemetry telemetry) {
+    private void abortarAlinhamento(String motivo) {
+        modoAlinhamento = false;
+        alinhamento.reset();
+        ciclosSemAlvo = 0;
+        motivoSaidaAutomatica = motivo;
+        pararBase();
+    }
+
+    private void alinharComAprilTag(Telemetry telemetry, double deltaTime) {
+        if (cronometroAlinhamento.seconds() >= TIMEOUT_ALINHAMENTO_SEGUNDOS) {
+            abortarAlinhamento("Timeout total do alinhamento");
+            mostrarFalhaAutomatica(telemetry);
+            return;
+        }
+
         AprilTagDetection alvo = encontrarMelhorAlvo();
         AprilTagAlignmentMath.Output resultado;
 
         if (alvo == null || alvo.ftcPose == null) {
+            ciclosSemAlvo++;
             resultado = alinhamento.update(AprilTagAlignmentMath.Input.semAlvo());
-            pararBase();
+            pararBase(); // Nunca manter a última potência sem uma leitura válida.
+            debugSnapshot = criarSnapshotSemAlvo();
+
+            if (ciclosSemAlvo >= MAX_CICLOS_SEM_ALVO) {
+                abortarAlinhamento("AprilTag perdida por tempo excessivo");
+                mostrarFalhaAutomatica(telemetry);
+                return;
+            }
+
             mostrarStatus(resultado, telemetry);
-            telemetry.addLine("Nenhum Cluster Válido da Hive Selecionada");
+            telemetry.addLine("Alvo perdido; aguardando nova detecção...");
+            telemetry.addData("Ciclos sem alvo", "%d/%d",
+                    ciclosSemAlvo, MAX_CICLOS_SEM_ALVO);
             return;
         }
 
+        ciclosSemAlvo = 0;
         resultado = alinhamento.update(AprilTagAlignmentMath.Input.alvo(
                 alvo.ftcPose.bearing,
-                alvo.ftcPose.range));
+                alvo.ftcPose.range), deltaTime);
+
+        debugSnapshot = new DebugSnapshot(
+                true,
+                alvo.ftcPose.bearing,
+                alvo.ftcPose.range,
+                resultado.erroBearing,
+                resultado.erroRange,
+                resultado.avanco,
+                resultado.giro,
+                resultado.ciclosEstaveis,
+                ciclosSemAlvo,
+                cronometroAlinhamento.seconds(),
+                resultado.status
+        );
 
         aplicarBase(resultado.avanco, resultado.giro);
         exibirDadosDoAlvo(alvo, resultado, telemetry);
+        telemetry.addData("Tempo automático", "%.1f/%.1f s",
+                cronometroAlinhamento.seconds(), TIMEOUT_ALINHAMENTO_SEGUNDOS);
+    }
+
+    private DebugSnapshot criarSnapshotSemAlvo() {
+        return new DebugSnapshot(
+                false,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                alinhamento.getCiclosEstaveis(),
+                ciclosSemAlvo,
+                cronometroAlinhamento.seconds(),
+                AprilTagAlignmentMath.Status.PROCURANDO_ALVO
+        );
+    }
+
+    private void mostrarFalhaAutomatica(Telemetry telemetry) {
+        telemetry.addData("Modo", "MANUAL - ALINHAMENTO CANCELADO");
+        telemetry.addData("Motivo", motivoSaidaAutomatica);
+        telemetry.addLine("Aperte A novamente para tentar de novo.");
     }
 
     private void mostrarStatus(AprilTagAlignmentMath.Output resultado, Telemetry telemetry) {
