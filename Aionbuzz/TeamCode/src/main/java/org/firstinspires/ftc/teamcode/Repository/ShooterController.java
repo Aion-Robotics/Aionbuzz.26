@@ -13,76 +13,88 @@ public class ShooterController {
     public static class Preset {
         public final String nome;
         public final double rpm;
-        public final double anguloCapuz;
+        public final double anguloCapuzGraus;
         public final double distancia;
 
-        public Preset(String nome, double rpm, double anguloCapuz, double distancia) {
+        public Preset(String nome, double rpm, double anguloCapuzGraus, double distancia) {
             this.nome = nome;
             this.rpm = rpm;
-            this.anguloCapuz = anguloCapuz;
+            this.anguloCapuzGraus = anguloCapuzGraus;
             this.distancia = distancia;
         }
     }
 
     public static class Config {
+        public String nomeMotorShooter = "motorShooter";
+        public String nomeServoAngulacao = "servoAngulacao";
+        public String nomeServoTrava = "servoTrava";
         public double ticksPorVolta = 28.0;
         public double toleranciaRpm = 50.0;
         public double tempoEstavelSegundos = 0.25;
-
-        public double dentesServo = 19.0;
-        public double dentesCapuz = 16.0;
-        public double sentidoEngrenagem = -1.0;
-        public double anguloCapuzZero = 10.0;
-        public double anguloServoZero = 100.0;
-        public double anguloServoMinimo = 0.0;
-        public double anguloServoMaximo = 300.0;
-        public double posicaoMinima = 0.15;
-        public double posicaoMaxima = 0.85;
-
+        public double anguloCapuzZeroGraus = 0.0;
+        public double relacaoServoPorCapuz = (19.0 / 16.0);
+        public double sentidoCapuz = 1.0;
+        public double cursoServoConfiguradoGraus = 300.0;
+        public double posicaoServoNoZero = 0.35;
+        public double posicaoServoMinima = 0.15;
+        public double posicaoServoMaxima = 0.85;
+        public DcMotorSimple.Direction direcaoMotorShooter = DcMotorSimple.Direction.REVERSE;
+        public Servo.Direction direcaoServoAngulacao = Servo.Direction.REVERSE;
         public double posicaoTravaFechada = 0.0;
         public double posicaoTravaAberta = 0.5;
-
-        public boolean inverterMotor = true;
-        public Preset presetB = new Preset("B", 2850.0, 200.0, 110.0);
-        public Preset presetX = new Preset("X", 3000.0, 170.0, 100.0);
+        public Preset presetB = new Preset("B", 2850.0,
+                200.0, 110.0);
+        public Preset presetX = new Preset("X", 3000.0,
+                170.0, 100.0);
     }
 
     private final DcMotorEx motorShooter;
     private final Servo servoAngulacao;
     private final Servo servoTrava;
     private final Config config;
-
-    private Preset presetAtual;
+    private double anguloCapuzAlvoGraus;
+    private double deslocamentoServoCalculadoGraus;
+    private double posicaoServoCalculada;
+    private boolean angulacaoValida;
+    private String diagnosticoAngulacao = "Aguardando inicializacao";
     private double rpmAlvo;
-    private double anguloAlvo;
     private double distanciaAlvo;
     private double velocidadeRealRpm;
     private double erroRpm;
-    private double anguloServoCalculado;
-    private double posicaoServoCalculada;
+    private boolean shooterAtivo;
     private boolean velocidadeAtingida;
-    private boolean anguloValido;
     private boolean travaAberta;
-    private long inicioEstabilidadeNanos;
+    private long inicioEstabilidadeNs;
+    private Preset presetAtual;
 
     public ShooterController(HardwareMap hardwareMap) {
         this(hardwareMap, new Config());
     }
 
     public ShooterController(HardwareMap hardwareMap, Config config) {
+        if (config == null) {
+            throw new IllegalArgumentException("A configuracao nao pode ser nula");
+        }
         this.config = config;
-        motorShooter = hardwareMap.get(DcMotorEx.class, "motorShooter");
-        servoAngulacao = hardwareMap.get(Servo.class, "servoAngulacao");
-        servoTrava = hardwareMap.get(Servo.class, "servoTrava");
-
+        anguloCapuzAlvoGraus = config.anguloCapuzZeroGraus;
+        posicaoServoCalculada = config.posicaoServoNoZero;
+        motorShooter = hardwareMap.get(DcMotorEx.class, config.nomeMotorShooter);
+        servoAngulacao = hardwareMap.get(Servo.class, config.nomeServoAngulacao);
+        servoTrava = hardwareMap.get(Servo.class, config.nomeServoTrava);
+        servoAngulacao.setDirection(config.direcaoServoAngulacao);
         motorShooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        if (config.inverterMotor) {
-            motorShooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        }
+        motorShooter.setDirection(config.direcaoMotorShooter);
         motorShooter.setPower(0.0);
+        parar();
+    }
+
+    public void start() {
+        servoAngulacao.setPosition(config.posicaoServoNoZero);
+        posicaoServoCalculada = config.posicaoServoNoZero;
+        anguloCapuzAlvoGraus = config.anguloCapuzZeroGraus;
+        motorShooter.setVelocity(0.0);
         fecharTrava();
-        desligar();
     }
 
     public void selecionarPresetB() {
@@ -95,37 +107,31 @@ public class ShooterController {
 
     public void selecionarPreset(Preset preset) {
         if (preset == null) {
-            throw new IllegalArgumentException("O preset não pode ser nulo");
+            throw new IllegalArgumentException("O preset nao pode ser nulo");
         }
         presetAtual = preset;
+        anguloCapuzAlvoGraus = preset.anguloCapuzGraus;
         rpmAlvo = preset.rpm;
-        anguloAlvo = preset.anguloCapuz;
         distanciaAlvo = preset.distancia;
+        shooterAtivo = true;
+        velocidadeAtingida = false;
+        inicioEstabilidadeNs = 0L;
+        fecharTrava();
     }
 
-    public void desligar() {
+    public void parar() {
+        shooterAtivo = false;
         rpmAlvo = 0.0;
-        presetAtual = null;
         velocidadeAtingida = false;
-        inicioEstabilidadeNanos = 0L;
+        inicioEstabilidadeNs = 0L;
         motorShooter.setVelocity(0.0);
         fecharTrava();
     }
 
-
     public void update() {
-        controlarShooter();
         controlarAngulacao();
-    }
-
-    public boolean abrirTravaSePronto() {
-        if (!velocidadeAtingida) {
-            fecharTrava();
-            return false;
-        }
-        travaAberta = true;
-        servoTrava.setPosition(config.posicaoTravaAberta);
-        return true;
+        controlarShooter();
+        controlarTrava();
     }
 
     public void fecharTrava() {
@@ -133,81 +139,103 @@ public class ShooterController {
         servoTrava.setPosition(config.posicaoTravaFechada);
     }
 
-    private void controlarShooter() {
-        if (rpmAlvo <= 0.0) {
-            motorShooter.setVelocity(0.0);
-            velocidadeRealRpm = 0.0;
-            erroRpm = 0.0;
-            velocidadeAtingida = false;
-            inicioEstabilidadeNanos = 0L;
-            return;
+    private boolean calcularPosicaoServo(double alvoCapuzGraus) {
+        angulacaoValida = false;
+        if (!Double.isFinite(alvoCapuzGraus)
+                || !Double.isFinite(config.relacaoServoPorCapuz)
+                || config.relacaoServoPorCapuz <= 0.0
+                || !Double.isFinite(config.cursoServoConfiguradoGraus)
+                || config.cursoServoConfiguradoGraus <= 0.0
+                || !Double.isFinite(config.posicaoServoNoZero)
+                || config.posicaoServoNoZero < config.posicaoServoMinima
+                || config.posicaoServoNoZero > config.posicaoServoMaxima
+                || config.posicaoServoMinima < 0.0
+                || config.posicaoServoMaxima > 1.0
+                || config.posicaoServoMaxima <= config.posicaoServoMinima) {
+            diagnosticoAngulacao = "Configuracao de zero/servo invalida";
+            return false;
         }
-
-        motorShooter.setVelocity(rpmParaTicks(rpmAlvo));
-        velocidadeRealRpm = ticksParaRpm(Math.abs(motorShooter.getVelocity()));
-        erroRpm = Math.abs(rpmAlvo - velocidadeRealRpm);
-
-        if (erroRpm <= config.toleranciaRpm) {
-            if (inicioEstabilidadeNanos == 0L) {
-                inicioEstabilidadeNanos = System.nanoTime();
-            }
-            double tempo = (System.nanoTime() - inicioEstabilidadeNanos) / 1_000_000_000.0;
-            velocidadeAtingida = tempo >= config.tempoEstavelSegundos;
-        } else {
-            inicioEstabilidadeNanos = 0L;
-            velocidadeAtingida = false;
+        double deltaCapuz = alvoCapuzGraus - config.anguloCapuzZeroGraus;
+        deslocamentoServoCalculadoGraus = config.sentidoCapuz
+                * deltaCapuz / config.relacaoServoPorCapuz;
+        double posicao = config.posicaoServoNoZero
+                + (deslocamentoServoCalculadoGraus / config.cursoServoConfiguradoGraus)
+                * (config.posicaoServoMaxima - config.posicaoServoMinima);
+        if (!Double.isFinite(deslocamentoServoCalculadoGraus)
+                || !Double.isFinite(posicao)
+                || posicao < config.posicaoServoMinima
+                || posicao > config.posicaoServoMaxima) {
+            diagnosticoAngulacao = "Alvo fora do curso normalizado calibrado";
+            return false;
         }
+        posicaoServoCalculada = Range.clip(posicao,
+                config.posicaoServoMinima, config.posicaoServoMaxima);
+        angulacaoValida = true;
+        diagnosticoAngulacao = "Alvo valido em relacao ao zero mecanico";
+        return true;
     }
 
     private void controlarAngulacao() {
-        double novaPosicao = calcularPosicaoServo(anguloAlvo);
-        if (anguloValido) {
-            posicaoServoCalculada = novaPosicao;
+        if (calcularPosicaoServo(anguloCapuzAlvoGraus)) {
             servoAngulacao.setPosition(posicaoServoCalculada);
         }
     }
 
-    private double calcularPosicaoServo(double anguloCapuz) {
-        double relacao = config.dentesServo / config.dentesCapuz;
-        double variacaoCapuz = anguloCapuz - config.anguloCapuzZero;
-        anguloServoCalculado = config.anguloServoZero
-                + config.sentidoEngrenagem * variacaoCapuz / relacao;
-
-        anguloValido = anguloServoCalculado >= config.anguloServoMinimo
-                && anguloServoCalculado <= config.anguloServoMaximo;
-        if (!anguloValido) {
-            return posicaoServoCalculada;
+    private void controlarShooter() {
+        if (!shooterAtivo || !Double.isFinite(rpmAlvo) || rpmAlvo <= 0.0) {
+            motorShooter.setVelocity(0.0);
+            velocidadeRealRpm = 0.0;
+            erroRpm = 0.0;
+            velocidadeAtingida = false;
+            inicioEstabilidadeNs = 0L;
+            return;
         }
-
-        double proporcao = (anguloServoCalculado - config.anguloServoMinimo)
-                / (config.anguloServoMaximo - config.anguloServoMinimo);
-        return Range.clip(config.posicaoMinima
-                        + proporcao * (config.posicaoMaxima - config.posicaoMinima),
-                config.posicaoMinima, config.posicaoMaxima);
+        motorShooter.setVelocity(rpmParaTicksPorSegundo(rpmAlvo));
+        velocidadeRealRpm = ticksPorSegundoParaRpm(Math.abs(motorShooter.getVelocity()));
+        erroRpm = Math.abs(rpmAlvo - velocidadeRealRpm);
+        if (Double.isFinite(erroRpm) && erroRpm <= config.toleranciaRpm) {
+            if (inicioEstabilidadeNs == 0L) {
+                inicioEstabilidadeNs = System.nanoTime();
+            }
+            double tempo = (System.nanoTime() - inicioEstabilidadeNs) / 1_000_000_000.0;
+            velocidadeAtingida = tempo >= config.tempoEstavelSegundos;
+        } else {
+            inicioEstabilidadeNs = 0L;
+            velocidadeAtingida = false;
+        }
     }
 
-    private double rpmParaTicks(double rpm) {
+    private void controlarTrava() {
+        travaAberta = shooterAtivo && velocidadeAtingida;
+        servoTrava.setPosition(travaAberta
+                ? config.posicaoTravaAberta : config.posicaoTravaFechada);
+    }
+
+    private double rpmParaTicksPorSegundo(double rpm) {
         return rpm * config.ticksPorVolta / 60.0;
     }
 
-    private double ticksParaRpm(double ticks) {
-        return ticks * 60.0 / config.ticksPorVolta;
+    private double ticksPorSegundoParaRpm(double ticksPorSegundo) {
+        return ticksPorSegundo * 60.0 / config.ticksPorVolta;
     }
 
+    public boolean isShooterAtivo() { return shooterAtivo; }
     public boolean isVelocidadeAtingida() { return velocidadeAtingida; }
     public boolean isTravaAberta() { return travaAberta; }
-    public boolean isAnguloValido() { return anguloValido; }
-    public String getNomePreset() { return presetAtual == null ? "Desligado" : presetAtual.nome; }
-    public double getRpmAlvo() { return rpmAlvo; }
+    public boolean isAngulacaoValida() { return angulacaoValida; }
+    public String getNomePreset() { return presetAtual == null ? "Nenhum - motor desligado" : presetAtual.nome; }
+    public double getRpmAlvo() { return shooterAtivo ? rpmAlvo : 0.0; }
     public double getVelocidadeRealRpm() { return velocidadeRealRpm; }
     public double getErroRpm() { return erroRpm; }
-    public double getAnguloAlvo() { return anguloAlvo; }
     public double getDistanciaAlvo() { return distanciaAlvo; }
-    public double getAnguloServoCalculado() { return anguloServoCalculado; }
+    public double getAnguloCapuzAlvoGraus() { return anguloCapuzAlvoGraus; }
+    public double getDeslocamentoServoCalculadoGraus() { return deslocamentoServoCalculadoGraus; }
     public double getPosicaoServoCalculada() { return posicaoServoCalculada; }
+    public double getPosicaoServoReportada() { return servoAngulacao.getPosition(); }
+    public String getDiagnosticoAngulacao() { return diagnosticoAngulacao; }
 
     public void stop() {
-        desligar();
+        parar();
         motorShooter.setPower(0.0);
     }
 }

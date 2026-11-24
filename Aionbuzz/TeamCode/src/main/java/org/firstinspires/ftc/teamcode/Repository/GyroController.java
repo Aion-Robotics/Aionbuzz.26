@@ -46,6 +46,8 @@ public class GyroController {
 
     private double continuousAngle;
     private double lastYaw;
+    private double headingTarget;
+    private boolean headingHoldStarted;
 
     private boolean turnStarted;
     private boolean turnFinished;
@@ -85,6 +87,8 @@ public class GyroController {
         imu.resetYaw();
         lastYaw = readYaw();
         continuousAngle = 0.0;
+        headingTarget = 0.0;
+        headingHoldStarted = false;
     }
 
     public double getYaw() {
@@ -103,12 +107,31 @@ public class GyroController {
         return continuousAngle;
     }
 
+    public void startHeadingHold() {
+        headingTarget = getContinuousAngle();
+        headingHoldStarted = true;
+    }
+
+    public void setHeadingTarget(double headingDegrees) {
+        headingTarget = headingDegrees;
+        headingHoldStarted = true;
+    }
+
+    public double getHeadingTarget() {
+        return headingTarget;
+    }
+
+    public double getHeadingError() {
+        if (!headingHoldStarted) startHeadingHold();
+        return headingTarget - getContinuousAngle();
+    }
+
     public double straightCorrection() {
-        return straightCorrection(getYaw(), -0.012, 0.15);
+        return headingCorrection(-0.012, 0.15);
     }
 
     public double straightCorrection(double kp, double maxCorrection) {
-        return straightCorrection(getYaw(), kp, maxCorrection);
+        return headingCorrection(kp, maxCorrection);
     }
 
     public double straightCorrection(
@@ -117,6 +140,11 @@ public class GyroController {
             double maxCorrection
     ) {
         return Range.clip(yaw * kp, -Math.abs(maxCorrection), Math.abs(maxCorrection));
+    }
+
+    public double headingCorrection(double kp, double maxCorrection) {
+        double error = getHeadingError();
+        return Range.clip(error * kp, -Math.abs(maxCorrection), Math.abs(maxCorrection));
     }
 
     public void startTurn(double degrees) {
@@ -137,7 +165,6 @@ public class GyroController {
         turnFinished = false;
         turnStatus = TurnStatus.RUNNING;
     }
-
 
     public TurnOutput updateTurn() {
         if (!turnStarted) {
