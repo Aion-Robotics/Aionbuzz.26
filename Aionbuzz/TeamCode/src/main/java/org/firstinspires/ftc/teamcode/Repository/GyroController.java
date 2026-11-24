@@ -127,7 +127,7 @@ public class GyroController {
     }
 
     public double straightCorrection() {
-        return headingCorrection(-0.012, 0.15);
+        return headingCorrection(-0.018, 0.12);
     }
 
     public double straightCorrection(double kp, double maxCorrection) {

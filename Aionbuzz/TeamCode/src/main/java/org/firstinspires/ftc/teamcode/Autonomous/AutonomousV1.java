@@ -277,7 +277,7 @@ public class AutonomousV1 extends OpMode {
             alinhamentoIniciado = true;
         }
 
-        double correcaoHeading = gyro.headingCorrection(0.012, 0.12);
+        double correcaoHeading = gyro.headingCorrection(0.018, 0.12);
         repositoryAprilTag.updateAlignment(telemetry, deltaTime, correcaoHeading);
         RepositoryAprilTag.DebugSnapshot snapshot = repositoryAprilTag.getDebugSnapshot();
 
@@ -439,9 +439,11 @@ public class AutonomousV1 extends OpMode {
     private void atualizarTelemetry() {
         telemetry.addData("Estado", estado);
         telemetry.addData("Tempo estado", "%.2f s", tempoEstado.seconds());
-        telemetry.addData("Heading", "%.1f graus", gyro == null ? 0.0 : gyro.getContinuousAngle());
+        telemetry.addData("Heading", "%.1f graus", gyro == null ? 0.0 :
+                gyro.getContinuousAngle());
         telemetry.addData("Polens", "%d / %d", polensAlimentados, polensParaDisparar);
-        telemetry.addData("RPM", shooter == null ? "-" : "%.0f", shooter == null ? 0.0 : shooter.getVelocidadeRealRpm());
+        telemetry.addData("RPM", shooter == null ? "-" : "%.0f", shooter == null ? 0.0 :
+                shooter.getVelocidadeRealRpm());
         if (shooter != null) {
             telemetry.addData("RPM estavel", shooter.isVelocidadeAtingida());
             telemetry.addData("Trava", shooter.isTravaAberta() ? "ABERTA" : "FECHADA");
@@ -451,9 +453,11 @@ public class AutonomousV1 extends OpMode {
             if (snapshot != null) {
                 telemetry.addData("AprilTag", snapshot.alvoEncontrado ? "encontrada" : "procurando");
                 telemetry.addData("Tag status", snapshot.status);
-                telemetry.addData("Bearing/Range", "%.1f / %.1f", snapshot.bearing, snapshot.range);
+                telemetry.addData("Bearing/Range", "%.1f / %.1f", snapshot.bearing,
+                        snapshot.range);
                 telemetry.addData("Ciclos estaveis", snapshot.ciclosEstaveis);
-                telemetry.addData("Correcao heading", "%.3f", repositoryAprilTag.getLastHeadingCorrection());
+                telemetry.addData("Correcao heading", "%.3f",
+                        repositoryAprilTag.getLastHeadingCorrection());
             }
         }
         if (estado == Estado.ABORTADO) telemetry.addData("Motivo", motivoAbortado);

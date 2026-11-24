@@ -86,7 +86,7 @@ public class IntakeTransferController {
     }
 
     public void coletar() {
-        coletar(1.0, 1.0);
+        coletar(0.6, 0.6);
     }
 
     public void coletar(
