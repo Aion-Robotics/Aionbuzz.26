@@ -84,10 +84,12 @@
         private static final double HEADING_PONTO_FINAL_GRAUS = 180.0;
         private static final double DIST_ESTACIONAMENTO_CM = 0.5 * TILE_CM;
 
+
         private static final double POTENCIA_DESLOCAMENTO = 0.42;
         private static final double POTENCIA_ESTACIONAMENTO = 0.30;
         private static final double TIMEOUT_DESLOCAMENTO = 5.0;
-        private static final double TIMEOUT_GIRO = 3.0;
+        private static final double SINAL_GIRO = 1.0;
+        private static final double TIMEOUT_GIRO = 4.0;
         private static final double TIMEOUT_SPINUP = 2.5;
         private static final double TIMEOUT_TRANSFERENCIA = 2.5;
 
@@ -250,7 +252,7 @@
                 motorDir.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 motorEsq.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                gyro.startHeadingHold();
+                gyro.setHeadingTarget(headingAlvo);
                 movimentoConfigurado = true;
             }
 
@@ -283,8 +285,11 @@
                 giroIniciado = true;
             }
             GyroController.TurnOutput output = gyro.updateTurn();
-            motorDir.setPower(output.turnPower);
-            motorEsq.setPower(output.turnPower);
+
+            double potenciaGiro = SINAL_GIRO * output.turnPower;
+
+            motorDir.setPower(potenciaGiro);
+            motorEsq.setPower(potenciaGiro);
             if (output.status == GyroController.TurnStatus.SUCCESS) {
                 pararDrive();
                 mudarEstado(proximo);

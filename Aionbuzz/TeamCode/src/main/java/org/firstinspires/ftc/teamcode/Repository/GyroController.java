@@ -59,6 +59,8 @@ public class GyroController {
     private int stableReadings;
     private TurnStatus turnStatus = TurnStatus.RUNNING;
 
+    private static final double MIN_TURN_POWER = 0.10;
+
     public GyroController(HardwareMap hardwareMap) {
         this(
                 hardwareMap,
@@ -194,6 +196,7 @@ public class GyroController {
 
         double kp = 0.018;
         double kd = 0.0;
+
         double command = Range.clip(
                 kp * error - kd * filteredAngularVelocity,
                 -0.35,
@@ -211,6 +214,12 @@ public class GyroController {
             }
         } else {
             stableReadings = 0;
+        }
+
+        if (!turnFinished
+                && Math.abs(error) > 1.0
+                && Math.abs(command) < MIN_TURN_POWER) {
+            command = Math.copySign(MIN_TURN_POWER, command);
         }
 
         previousAngle = currentAngle;
