@@ -127,7 +127,7 @@ public class GyroController {
     }
 
     public double straightCorrection() {
-        return headingCorrection(-0.018, 0.12);
+        return headingCorrection(0.018, 0.12);
     }
 
     public double straightCorrection(double kp, double maxCorrection) {
@@ -190,7 +190,7 @@ public class GyroController {
 
         double rawAngularVelocity = (currentAngle - previousAngle) / deltaTime;
         filteredAngularVelocity =
-                0.8 * filteredAngularVelocity + 0.4 * rawAngularVelocity;
+                0.8 * filteredAngularVelocity + 0.2 * rawAngularVelocity;
 
         double kp = 0.018;
         double kd = 0.0;

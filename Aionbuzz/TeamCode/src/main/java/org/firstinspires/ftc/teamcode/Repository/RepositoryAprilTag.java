@@ -21,7 +21,7 @@ public class RepositoryAprilTag {
     private static final int CAMERA_WIDTH = 640;
     private static final int CAMERA_HEIGHT = 480;
     private static final double TIMEOUT_ALINHAMENTO_SEGUNDOS = 8.0;
-    private static final int MAX_CICLOS_SEM_ALVO = 10;
+    private static final double TIMEOUT_SEM_ALVO_SEGUNDOS = 0.75;
 
     private static final String META_HIVE_UP = "RED SCORING";
     private static final String META_HIVE_RIGHT = "RED AUDIENCE";
@@ -64,6 +64,7 @@ public class RepositoryAprilTag {
     private final VisionPortal visionPortal;
     private final AprilTagAlignmentMath alinhamento;
     private final ElapsedTime cronometroAlinhamento = new ElapsedTime();
+    private final ElapsedTime cronometroSemAlvo = new ElapsedTime();
 
     private Hive hiveSelecionada = Hive.RED_SCORING;
     private boolean alinhamentoAtivo;
@@ -113,6 +114,7 @@ public class RepositoryAprilTag {
         ultimaCorrecaoHeading = 0.0;
         motivoSaida = "";
         cronometroAlinhamento.reset();
+        cronometroSemAlvo.reset();
         pararBase();
     }
 
@@ -144,24 +146,37 @@ public class RepositoryAprilTag {
         AprilTagDetection alvo = encontrarMelhorAlvo();
         if (alvo == null || alvo.ftcPose == null) {
             ciclosSemAlvo++;
+
             alinhamento.update(AprilTagAlignmentMath.Input.semAlvo());
             pararBase();
             debugSnapshot = snapshotSemAlvo();
-            if (ciclosSemAlvo >= MAX_CICLOS_SEM_ALVO) {
+
+            double tempoSemAlvo = cronometroSemAlvo.seconds();
+
+            if (tempoSemAlvo >= TIMEOUT_SEM_ALVO_SEGUNDOS) {
                 abortar("AprilTag perdida por tempo excessivo");
                 telemetry.addData("Alinhamento", "CANCELADO");
                 telemetry.addData("Motivo", motivoSaida);
+                telemetry.addData("Tempo sem alvo", "%.2f s", tempoSemAlvo);
                 return;
             }
+
             telemetry.addData("Alinhamento", "AGUARDANDO ALVO");
-            telemetry.addData("Ciclos sem alvo", "%d/%d", ciclosSemAlvo, MAX_CICLOS_SEM_ALVO);
+            telemetry.addData("Tempo sem alvo", "%.2f / %.2f s",
+                    tempoSemAlvo, TIMEOUT_SEM_ALVO_SEGUNDOS);
             return;
         }
 
+        cronometroSemAlvo.reset();
         ciclosSemAlvo = 0;
+
         AprilTagAlignmentMath.Output resultado = alinhamento.update(
-                AprilTagAlignmentMath.Input.alvo(alvo.ftcPose.bearing, alvo.ftcPose.range),
-                deltaTime);
+                AprilTagAlignmentMath.Input.alvo(
+                        alvo.ftcPose.bearing,
+                        alvo.ftcPose.range
+                ),
+                deltaTime
+        );
 
         aplicarBase(resultado.avanco, resultado.giro + ultimaCorrecaoHeading);
         debugSnapshot = new DebugSnapshot(
