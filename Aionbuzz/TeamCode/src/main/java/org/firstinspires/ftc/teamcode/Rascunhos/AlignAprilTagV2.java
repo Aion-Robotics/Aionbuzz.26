@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Rascunhos;
 import android.util.Size;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -21,7 +22,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
-@TeleOp(name = "Align AprilTag V2")
+
+@Disabled
 public class AlignAprilTagV2 extends OpMode {
 
     private DcMotor motorDir;

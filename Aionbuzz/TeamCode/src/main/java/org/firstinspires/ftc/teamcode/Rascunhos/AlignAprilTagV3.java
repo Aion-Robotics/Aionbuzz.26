@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Rascunhos;
 import android.util.Size;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,7 +21,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
 import java.util.ArrayList;
 
-@TeleOp
+@Disabled
 public class AlignAprilTagV3 extends OpMode {
 
     private static final int CAMERA_WIDTH = 640;

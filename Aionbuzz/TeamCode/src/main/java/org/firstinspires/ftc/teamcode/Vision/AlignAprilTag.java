@@ -46,7 +46,13 @@ public class AlignAprilTag extends OpMode {
         if (modoAutomatico) {
             double deltaTime = cronometroLoop.seconds();
             cronometroLoop.reset();
-            aprilTag.updateAlignment(telemetry, deltaTime);
+            aprilTag.updateAlignment(
+                    telemetry,
+                    deltaTime
+            );
+            if (!aprilTag.isAlignmentActive()) {
+                modoAutomatico = false;
+            }
         } else {
             cronometroLoop.reset();
             dirigirManualmente();

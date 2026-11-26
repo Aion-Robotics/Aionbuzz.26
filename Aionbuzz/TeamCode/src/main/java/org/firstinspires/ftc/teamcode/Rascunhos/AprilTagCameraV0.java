@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Rascunhos;
 
 import android.util.Size;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -15,7 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
-@TeleOp
+@Disabled
 public class AprilTagCameraV0 extends OpMode {
 
     private static final int CAMERA_WIDTH = 640;

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Rascunhos;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -15,7 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
-@TeleOp(name = "Align AprilTag")
+@Disabled
 public class AlignAprilTagV1 extends OpMode {
 
     private DcMotor motorDir;
